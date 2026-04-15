@@ -44,15 +44,10 @@
             </div>
         </div>
 
-        <div class="yedek-bar">
-            <button class="btn-yedek" onclick="yedekAl()">⬇ JSON YEDEK AL</button>
-            <button class="btn-yedek-yukle" onclick="document.getElementById('yedekDosyaInput').click()">⬆ YEDEĞİ GERİ YÜKLE</button>
-            <input type="file" id="yedekDosyaInput" accept=".json" style="display:none;" onchange="yedekYukle(event)">
-        </div>
-
         <div class="ana-modul-secici">
             <button class="modul-btn aktif-modul" id="btn-besiModulu" onclick="modulDegistir('besiModulu', this)">🥩 BESİ YÖNETİMİ</button>
             <button class="modul-btn" id="btn-damizlikModulu" onclick="modulDegistir('damizlikModulu', this)">🥛 DAMIZLIK YÖNETİMİ</button>
+            <button class="modul-btn" id="btn-giderModulu" onclick="modulDegistir('giderModulu', this)">💸 GİDER YÖNETİMİ</button>
         </div>
 
         <div id="besiModulu" class="modul-icerik aktif-modul-icerik">
@@ -107,71 +102,30 @@
             </div>
 
             <div id="finansSekmesi" class="sekme-icerik">
-                <h3>Birim Maliyetler ve Kâr/Zarar Takibi</h3>
+                <h3>Rasyon Bazlı Maliyet Takibi</h3>
                 <div class="fiyat-grid">
                     <div class="form-group"><label>Güncel Karkas Et Fiyatı (TL/kg)</label><input type="number" id="guncelEtFiyati" placeholder="Örn: 350"></div>
                 </div>
-
-                <div id="finansPatoklar">
-                    <div class="patok-card" id="finans_patok_1">
-                        <h3>Patok 1 - Finans Bilgileri</h3>
-                        <div class="uclu-grup">
-                            <div class="form-group"><label>Hayvan Başı Alış Fiyatı (TL)</label><input type="number" id="p1_alisFiyati" placeholder="Örn: 45000"></div>
-                            <div class="form-group"><label>İlk Alış Canlı Kg</label><input type="number" id="p1_alisKg" placeholder="Örn: 250"></div>
-                            <div class="form-group"><label>Sürüye Alış Tarihi</label><input type="date" id="p1_alisTarihi"></div>
-                        </div>
-                        <div class="uclu-grup">
-                            <div class="form-group"><label>Karkas Randımanı (%)</label><input type="number" id="p1_karkasRandiman" placeholder="Örn: 55" value="55"></div>
-                            <div class="form-group"><label>Fire Oranı (%)</label><input type="number" id="p1_fire" placeholder="Örn: 2" value="2"></div>
-                            <div class="form-group"><label>Aylık Canlı Kg Alışı</label><input type="number" id="p1_aylikArtis" placeholder="Örn: 40"></div>
-                        </div>
-                        <div id="finans_sonuc_p1" class="patok-ic-sonuc" style="display:none;"></div>
-                    </div>
-                </div>
+                <div id="finansPatoklar"></div>
             </div>
 
             <div id="stokSekmesi" class="sekme-icerik">
                 <h3>Depodaki Mevcut Stoklar</h3>
-                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Sistem her gün otomatik olarak günlük tüketimi stoklarınızdan düşer.</p>
-                
                 <div class="patok-card">
-                    <div class="ikili-grup">
-                        <div class="form-group">
-                            <label>Arpa Stok</label>
-                            <div class="stok-girdi">
-                                <input type="number" id="stokArpa" placeholder="Miktar" style="flex: 2;">
-                                <select id="stokArpaBirim" style="flex: 1.5;">
-                                    <option value="kg">kg</option>
-                                    <option value="torba">Torba</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>1 Torba Arpa (kg)</label>
-                            <input type="number" id="arpaTorbaKg_stok" disabled placeholder="Rasyondan Alınır" style="background:#ecf0f1;">
-                        </div>
-                    </div>
-                    <div class="form-group"><label>Mısır Flake (Toplam Torba)</label><input type="number" id="stokMisir" placeholder="Örn: 120"></div>
-                    <div class="form-group"><label>Fabrika Yemi (Toplam Torba)</label><input type="number" id="stokYem" placeholder="Örn: 250"></div>
-                    <div class="form-group"><label>Soya Küspesi (Toplam kg)</label><input type="number" id="stokSoya" placeholder="Örn: 1500"></div>
-                    <div class="form-group"><label>Saman (Toplam kg)</label><input type="number" id="stokSaman" placeholder="Örn: 30000"></div>
+                    <div class="form-group"><label>Arpa Stok (kg)</label><input type="number" id="stokArpa"></div>
+                    <div class="form-group"><label>Mısır Flake (Torba)</label><input type="number" id="stokMisir"></div>
+                    <div class="form-group"><label>Fabrika Yemi (Torba)</label><input type="number" id="stokYem"></div>
+                    <div class="form-group"><label>Soya Küspesi (kg)</label><input type="number" id="stokSoya"></div>
+                    <div class="form-group"><label>Saman (kg)</label><input type="number" id="stokSaman"></div>
                 </div>
-                
-                <div id="stokSonucAlani" style="display:none; margin-top: 20px;"></div>
             </div>
 
             <div id="saglikSekmesi" class="sekme-icerik">
                 <h3>Aşı ve İlaç Takibi</h3>
                 <div class="patok-card">
-                    <div class="dortlu-grup">
-                        <div class="form-group"><label>Patok Seç</label><select id="saglikPatokSec"></select></div>
-                        <div class="form-group"><label>Tarih</label><input type="date" id="saglikTarih"></div>
-                        <div class="form-group"><label>Aşı / İlaç Adı</label><input type="text" id="saglikIlac" placeholder="Örn: Çelerme"></div>
-                        <div class="form-group"><label>Doz / Tekrar</label><input type="text" id="saglikDoz" placeholder="Örn: 1. Doz"></div>
-                    </div>
-                    <button onclick="saglikKaydet()" style="background-color: #8e44ad; margin-top: 10px;">SAĞLIK KAYDINI EKLE</button>
+                    <div class="form-group"><label>İlaç Adı</label><input type="text" id="saglikIlac"></div>
+                    <button onclick="saglikKaydet()" style="background-color: #8e44ad;">EKLE</button>
                 </div>
-                <div id="saglikGecmisi" style="margin-top: 20px; overflow-x: auto;"></div>
             </div>
         </div>
         
@@ -182,38 +136,51 @@
             </div>
 
             <div id="inekKayitSekmesi" class="sekme-icerik aktif-sekme">
-                <h3>Sürü Listesi ve Günlük Süt Verimi</h3>
                 <div class="patok-card">
-                    <div class="dortlu-grup">
-                        <div class="form-group"><label>Küpe No / İsim</label><input type="text" id="inekKupe" placeholder="Örn: TR123 / Sarıkız"></div>
-                        <div class="form-group"><label>Laktasyon Sayısı</label><input type="number" id="inekLaktasyon" placeholder="Kaçıncı buzağısı?"></div>
-                        <div class="form-group"><label>Günlük Süt (Litre)</label><input type="number" id="inekSut" placeholder="Örn: 25" step="0.5"></div>
-                        <div class="form-group"><label>Durum</label>
-                            <select id="inekDurum">
-                                <option value="Sağmal">Sağmal (Süt Veriyor)</option>
-                                <option value="Kuru">Kuruda</option>
-                                <option value="Düve">Düve</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button onclick="inekEkle()" style="background-color: #27ae60;">İNEK EKLE / BİLGİ GÜNCELLE</button>
+                    <div class="form-group"><label>Küpe No</label><input type="text" id="inekKupe"></div>
+                    <button onclick="inekEkle()" style="background-color: #27ae60;">İNEK EKLE</button>
                 </div>
-                <div id="sutOzetAlan" class="result-box" style="margin-top:15px; padding:10px; background:#e8f8f5; border-color:#27ae60; display:none;"></div>
-                <div id="inekListesiAlan" style="margin-top: 15px; overflow-x: auto;"></div>
+                <div id="inekListesiAlan"></div>
             </div>
 
             <div id="tohumlamaSekmesi" class="sekme-icerik">
-                <h3>Tohumlama ve Doğum Takibi</h3>
                 <div class="patok-card">
-                    <div class="uclu-grup">
-                        <div class="form-group"><label>İnek Seç</label><select id="tohumlamaInekSec"></select></div>
-                        <div class="form-group"><label>Tohumlama Tarihi</label><input type="date" id="tohumTarihi"></div>
-                        <div class="form-group"><label>Boğa / Sperma Kodu</label><input type="text" id="spermaKodu" placeholder="Örn: Hoştayn - H123"></div>
-                    </div>
-                    <button onclick="tohumlamaEkle()" style="background-color: #8e44ad;">TOHUMLAMA KAYDINI EKLE</button>
+                    <button onclick="tohumlamaEkle()" style="background-color: #8e44ad;">TOHUMLAMA EKLE</button>
                 </div>
-                <p style="font-size: 12px; color: #7f8c8d; margin-top:10px;">* Tahmini doğum tarihi tohumlamadan itibaren 283 gün sayılarak otomatik hesaplanır. Kuruda kalma uyarısı doğuma 60 gün kala verilir.</p>
-                <div id="tohumlamaListesiAlan" style="margin-top: 15px; overflow-x: auto;"></div>
+                <div id="tohumlamaListesiAlan"></div>
+            </div>
+        </div>
+
+        <div id="giderModulu" class="modul-icerik">
+            <div class="patok-card">
+                <h3>💸 Çiftlik Genel Giderleri</h3>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Yem dışındaki tüm harcamalarınızı (Mazot, Elektrik, İşçilik, Tamirat) buradan takip edin.</p>
+                
+                <div class="fiyat-grid">
+                    <div class="form-group">
+                        <label>Gider Kategorisi</label>
+                        <select id="gider-kategori">
+                            <option value="yakit">⛽ Yakıt / Enerji</option>
+                            <option value="iscilik">👤 İşçilik / Maaş</option>
+                            <option value="tamir">🛠️ Tamirat / Bakım</option>
+                            <option value="veteriner">🏥 Veteriner / İlaç</option>
+                            <option value="diger">📦 Diğer</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Gider Adı</label><input type="text" id="gider-ad" placeholder="Örn: Traktör Mazotu"></div>
+                    <div class="form-group"><label>Miktar / Birim</label><input type="number" id="gider-miktar" placeholder="Örn: 50"></div>
+                    <div class="form-group"><label>Birim Fiyat (TL)</label><input type="number" id="gider-birim-fiyat" placeholder="Litre/Adet Fiyatı"></div>
+                    <div class="form-group"><label>İşlem Tarihi</label><input type="date" id="gider-tarih"></div>
+                </div>
+                
+                <button onclick="giderKaydet()" style="background-color: #e67e22; width: 100%; margin-top: 15px; font-weight: bold;">GİDERİ KAYDET VE LİSTEYE EKLE</button>
+            </div>
+
+            <div class="patok-card" style="margin-top: 20px;">
+                <h3>📊 Gider Kayıtları</h3>
+                <div id="giderListesiAlan" style="overflow-x: auto;">
+                    <p style="text-align:center; color:#bdc3c7;">Henüz kayıt bulunamadı.</p>
+                </div>
             </div>
         </div>
 
