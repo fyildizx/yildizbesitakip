@@ -44,6 +44,12 @@
             </div>
         </div>
 
+        <div class="yedek-bar">
+            <button class="btn-yedek" onclick="yedekAl()">⬇ JSON YEDEK AL</button>
+            <button class="btn-yedek-yukle" onclick="document.getElementById('yedekDosyaInput').click()">⬆ YEDEĞİ GERİ YÜKLE</button>
+            <input type="file" id="yedekDosyaInput" accept=".json" style="display:none;" onchange="yedekYukle(event)">
+        </div>
+
         <div class="ana-modul-secici">
             <button class="modul-btn aktif-modul" id="btn-besiModulu" onclick="modulDegistir('besiModulu', this)">🥩 BESİ YÖNETİMİ</button>
             <button class="modul-btn" id="btn-damizlikModulu" onclick="modulDegistir('damizlikModulu', this)">🥛 DAMIZLIK YÖNETİMİ</button>
@@ -78,16 +84,12 @@
                             <div class="form-group"><label>Hedef Kg</label><input type="number" id="p1_hedef" placeholder="Örn: 600"></div>
                             <div class="form-group"><label>Günlük Tahmini Artış</label><input type="number" id="p1_artis" placeholder="Örn: 1.35" step="0.01"></div>
                         </div>
-                        <div class="ikili-grup">
-                            <div class="form-group"><label>Yem Proteini (%)</label><input type="number" id="p1_yemProtein" placeholder="Örn: 14" step="0.1"></div>
-                            <div class="form-group"><label>Yem Enerjisi (ME)</label><input type="number" id="p1_yemEnerji" placeholder="Örn: 2.6" step="0.1"></div>
-                        </div>
                         <div class="grid-5">
-                            <div><label class="kucuk-label">Arpa (Top. kg)</label><input type="number" id="p1_arpa" step="0.1"></div>
-                            <div><label class="kucuk-label">Mısır (Top. kg)</label><input type="number" id="p1_misir" step="0.1"></div>
-                            <div><label class="kucuk-label">Yem (Top. kg)</label><input type="number" id="p1_yem" step="0.1"></div>
-                            <div><label class="kucuk-label">Soya (Top. kg)</label><input type="number" id="p1_soya" step="0.1"></div>
-                            <div><label class="kucuk-label">Saman (Top. kg)</label><input type="number" id="p1_saman" step="0.1"></div>
+                            <div><label class="kucuk-label">Arpa (kg)</label><input type="number" id="p1_arpa" step="0.1"></div>
+                            <div><label class="kucuk-label">Mısır (kg)</label><input type="number" id="p1_misir" step="0.1"></div>
+                            <div><label class="kucuk-label">Yem (kg)</label><input type="number" id="p1_yem" step="0.1"></div>
+                            <div><label class="kucuk-label">Soya (kg)</label><input type="number" id="p1_soya" step="0.1"></div>
+                            <div><label class="kucuk-label">Saman (kg)</label><input type="number" id="p1_saman" step="0.1"></div>
                         </div>
                         <div id="sonuc_p1" class="patok-ic-sonuc" style="display:none;"></div>
                     </div>
@@ -97,12 +99,11 @@
                     <button class="btn-ekle" onclick="patokEkle()">+ YENİ PATOK EKLE</button>
                     <button class="btn-sil" onclick="patokSil()">- İSTEDİĞİN PATOKU SİL</button>
                 </div>
-                
                 <div class="result-box" id="genelSonucAlani" style="display:none;"></div>
             </div>
 
             <div id="finansSekmesi" class="sekme-icerik">
-                <h3>Rasyon Bazlı Maliyet Takibi</h3>
+                <h3>Kâr/Zarar Projeksiyonu</h3>
                 <div class="fiyat-grid">
                     <div class="form-group"><label>Güncel Karkas Et Fiyatı (TL/kg)</label><input type="number" id="guncelEtFiyati" placeholder="Örn: 350"></div>
                 </div>
@@ -110,7 +111,7 @@
             </div>
 
             <div id="stokSekmesi" class="sekme-icerik">
-                <h3>Depodaki Mevcut Stoklar</h3>
+                <h3>Depo Mevcudu</h3>
                 <div class="patok-card">
                     <div class="form-group"><label>Arpa Stok (kg)</label><input type="number" id="stokArpa"></div>
                     <div class="form-group"><label>Mısır Flake (Torba)</label><input type="number" id="stokMisir"></div>
@@ -121,11 +122,12 @@
             </div>
 
             <div id="saglikSekmesi" class="sekme-icerik">
-                <h3>Aşı ve İlaç Takibi</h3>
+                <h3>Tedavi Kayıtları</h3>
                 <div class="patok-card">
-                    <div class="form-group"><label>İlaç Adı</label><input type="text" id="saglikIlac"></div>
-                    <button onclick="saglikKaydet()" style="background-color: #8e44ad;">EKLE</button>
+                    <div class="form-group"><label>Aşı / İlaç Adı</label><input type="text" id="saglikIlac"></div>
+                    <button onclick="saglikKaydet()" style="background-color: #8e44ad; width:100%;">SAĞLIK KAYDINI EKLE</button>
                 </div>
+                <div id="saglikGecmisi"></div>
             </div>
         </div>
         
@@ -137,15 +139,17 @@
 
             <div id="inekKayitSekmesi" class="sekme-icerik aktif-sekme">
                 <div class="patok-card">
-                    <div class="form-group"><label>Küpe No</label><input type="text" id="inekKupe"></div>
-                    <button onclick="inekEkle()" style="background-color: #27ae60;">İNEK EKLE</button>
+                    <div class="form-group"><label>Küpe No / İsim</label><input type="text" id="inekKupe"></div>
+                    <div class="form-group"><label>Günlük Süt (Litre)</label><input type="number" id="inekSut" step="0.5"></div>
+                    <button onclick="inekEkle()" style="background-color: #27ae60; width:100%;">İNEK EKLE</button>
                 </div>
                 <div id="inekListesiAlan"></div>
             </div>
 
             <div id="tohumlamaSekmesi" class="sekme-icerik">
                 <div class="patok-card">
-                    <button onclick="tohumlamaEkle()" style="background-color: #8e44ad;">TOHUMLAMA EKLE</button>
+                    <div class="form-group"><label>Boğa / Sperma Kodu</label><input type="text" id="spermaKodu"></div>
+                    <button onclick="tohumlamaEkle()" style="background-color: #8e44ad; width:100%;">TOHUMLAMA KAYDINI EKLE</button>
                 </div>
                 <div id="tohumlamaListesiAlan"></div>
             </div>
@@ -153,33 +157,59 @@
 
         <div id="giderModulu" class="modul-icerik">
             <div class="patok-card">
-                <h3>💸 Çiftlik Genel Giderleri</h3>
-                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Yem dışındaki tüm harcamalarınızı (Mazot, Elektrik, İşçilik, Tamirat) buradan takip edin.</p>
+                <h3>💸 Yeni Alım Kaydı (Yem & İlaç & Diğer)</h3>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Hangi ürünü, ne zaman, kaça aldığınızı buraya işleyin.</p>
                 
                 <div class="fiyat-grid">
                     <div class="form-group">
-                        <label>Gider Kategorisi</label>
+                        <label>Tarih (Ne Zaman?)</label>
+                        <input type="date" id="gider-tarih">
+                    </div>
+                    <div class="form-group">
+                        <label>Kategori</label>
                         <select id="gider-kategori">
-                            <option value="yakit">⛽ Yakıt / Enerji</option>
-                            <option value="iscilik">👤 İşçilik / Maaş</option>
-                            <option value="tamir">🛠️ Tamirat / Bakım</option>
-                            <option value="veteriner">🏥 Veteriner / İlaç</option>
-                            <option value="diger">📦 Diğer</option>
+                            <option value="Yem">🌾 Yem (Arpa, Saman vb.)</option>
+                            <option value="İlaç">💉 İlaç / Aşı / Veteriner</option>
+                            <option value="Mazot">⛽ Akaryakıt / Mazot</option>
+                            <option value="Diğer">📦 Diğer Giderler</option>
                         </select>
                     </div>
-                    <div class="form-group"><label>Gider Adı</label><input type="text" id="gider-ad" placeholder="Örn: Traktör Mazotu"></div>
-                    <div class="form-group"><label>Miktar / Birim</label><input type="number" id="gider-miktar" placeholder="Örn: 50"></div>
-                    <div class="form-group"><label>Birim Fiyat (TL)</label><input type="number" id="gider-birim-fiyat" placeholder="Litre/Adet Fiyatı"></div>
-                    <div class="form-group"><label>İşlem Tarihi</label><input type="date" id="gider-tarih"></div>
+                    <div class="form-group">
+                        <label>Ürün/Hizmet Adı (Neyi Aldım?)</label>
+                        <input type="text" id="gider-ad" placeholder="Örn: 15.15.15 Gübre veya Şap Aşısı">
+                    </div>
+                    <div class="form-group">
+                        <label>Miktar</label>
+                        <input type="number" id="gider-miktar" placeholder="Kaç kg / Kaç adet?">
+                    </div>
+                    <div class="form-group">
+                        <label>Birim Fiyat (Kaç Paraya?)</label>
+                        <input type="number" id="gider-birim-fiyat" placeholder="1 birim fiyatı (TL)">
+                    </div>
                 </div>
-                
-                <button onclick="giderKaydet()" style="background-color: #e67e22; width: 100%; margin-top: 15px; font-weight: bold;">GİDERİ KAYDET VE LİSTEYE EKLE</button>
+                <button onclick="giderKaydet()" style="background-color: #e67e22; width: 100%; margin-top: 15px; font-weight: bold; padding: 15px; border-radius: 10px; border: none; color: white;">
+                    MALİYET KAYDINI LİSTEYE EKLE
+                </button>
             </div>
 
             <div class="patok-card" style="margin-top: 20px;">
-                <h3>📊 Gider Kayıtları</h3>
-                <div id="giderListesiAlan" style="overflow-x: auto;">
-                    <p style="text-align:center; color:#bdc3c7;">Henüz kayıt bulunamadı.</p>
+                <h3>📋 Alım Geçmişi ve Birim Maliyet Listesi</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px;">
+                        <thead>
+                            <tr style="background: #34495e; color: white;">
+                                <th style="padding: 12px; text-align: left;">Tarih</th>
+                                <th style="padding: 12px; text-align: left;">Kategori</th>
+                                <th style="padding: 12px; text-align: left;">Ürün</th>
+                                <th style="padding: 12px; text-align: center;">Miktar</th>
+                                <th style="padding: 12px; text-align: right;">Birim (TL)</th>
+                                <th style="padding: 12px; text-align: right;">Toplam (TL)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="giderListesiGövde">
+                            <tr><td colspan="6" style="text-align:center; padding:20px; color:#bdc3c7;">Veriler yükleniyor veya henüz kayıt yok...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
