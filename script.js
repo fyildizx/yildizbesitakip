@@ -1,3 +1,14 @@
+// GOOGLE İLE GİRİŞ FONKSİYONU
+function googleIleGiris() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            console.log("Google ile giriş başarılı!");
+        })
+        .catch((error) => {
+            document.getElementById('auth-hata').innerText = "Hata: " + error.message;
+        });
+}
 const auth = firebase.auth();
 let mevcutKullanici = null;
 
