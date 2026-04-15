@@ -4,1273 +4,241 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yıldız Çiftlik Yönetim Sistemi</title>
-    <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; margin: 0; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2, h3 { color: #2c3e50; margin-bottom: 10px; border-bottom: 2px solid #ecf0f1; padding-bottom: 5px; }
-        
-        /* İŞLETME YÖNETİM BAR'I */
-        .isletme-bar { background: #2c3e50; padding: 15px; border-radius: 10px; margin-bottom: 20px; color: white; display: flex; flex-direction: column; gap: 10px; }
-        .isletme-secici { width: 100%; margin-top: 5px; padding: 10px; border-radius: 6px; font-weight: bold; border: none; background: #ecf0f1; color: #2c3e50; font-size: 14px; }
-        .isletme-butonlar { display: flex; gap: 8px; }
-        .btn-yeni-isletme { background: #2980b9; color: white; border: none; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; flex: 1; cursor: pointer; transition: 0.3s;}
-        .btn-yeni-isletme:hover { background: #1f618d; }
-        .btn-favori-isletme { background: #f39c12; color: white; border: none; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; flex: 1; cursor: pointer; transition: 0.3s;}
-        .btn-favori-isletme:hover { background: #e67e22; }
-        .btn-isletme-sil { background: #c0392b; color: white; border: none; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; flex: 0.5; cursor: pointer; transition: 0.3s;}
-        .btn-isletme-sil:hover { background: #a93226; }
-
-        /* YEDEKLEME BUTONU */
-        .yedek-bar { display: flex; gap: 8px; margin-bottom: 15px; }
-        .btn-yedek { background: #16a085; color: white; border: none; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; flex: 1; cursor: pointer; transition: 0.3s; }
-        .btn-yedek:hover { background: #117a65; }
-        .btn-yedek-yukle { background: #8e44ad; color: white; border: none; padding: 10px; font-size: 12px; font-weight: bold; border-radius: 6px; flex: 1; cursor: pointer; transition: 0.3s; }
-        .btn-yedek-yukle:hover { background: #6c3483; }
-        
-        /* ANA MODÜL SEÇİCİ */
-        .ana-modul-secici { display: flex; gap: 10px; margin-bottom: 20px; background: #34495e; padding: 8px; border-radius: 10px; }
-        .modul-btn { flex: 1; padding: 12px; background: transparent; color: #bdc3c7; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 14px; }
-        .modul-btn:hover { color: white; background: rgba(255,255,255,0.1); }
-        .modul-btn.aktif-modul { background: #27ae60; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .modul-icerik { display: none; }
-        .modul-icerik.aktif-modul-icerik { display: block; animation: fadeIn 0.3s; }
-        
-        .sekme-menu { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; background: #ecf0f1; padding: 5px; border-radius: 8px; }
-        .sekme-btn { flex: 1; min-width: 45%; padding: 10px; background: transparent; color: #7f8c8d; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 13px; }
-        .sekme-btn.aktif { background: white; color: #2980b9; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .sekme-icerik { display: none; }
-        .sekme-icerik.aktif-sekme { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .fiyat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 15px; background: #fdfefe; padding: 10px; border: 1px solid #bdc3c7; border-radius: 5px; }
-        .ikili-grup { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .uclu-grup { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .dortlu-grup { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-        .grid-5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); gap: 8px; }
-        .patok-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #fafafa; }
-        .form-group { margin-bottom: 5px; }
-        label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 4px; color: #34495e; }
-        .kucuk-label { font-size: 11px; color: #7f8c8d; font-weight: bold; margin-bottom: 3px; display: block; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        .stok-girdi { display: flex; gap: 5px; }
-        button { width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
-        .buton-grubu { display: flex; gap: 10px; margin-top: 10px; }
-        .buton-grubu button { margin-top: 0; }
-        .btn-ekle { background: #2980b9; flex: 1; }
-        .btn-ekle:hover { background: #1f618d; }
-        .btn-sil { background: #e74c3c; flex: 1; }
-        .btn-sil:hover { background: #c0392b; }
-        .patok-ic-sonuc { margin-top: 15px; padding: 10px; background: #e8f8f5; border: 1px solid #27ae60; border-radius: 5px; font-size: 13px; color: #2c3e50; }
-        .tuketim-kutu { font-size: 12px; color: #444; margin-top: 8px; background: #fff; padding: 8px; border-radius: 5px; border: 1px dashed #27ae60; }
-        .deger-kutu { margin-top: 8px; font-weight: bold; color: #16a085; }
-        .oneri-kutu { margin-top: 5px; font-weight: bold; color: #2980b9; font-size: 12px; padding: 5px; background: #ebf5fb; border-radius: 4px; border-left: 3px solid #2980b9; }
-        .hedef-kutu { margin-top: 5px; font-weight: bold; color: #8e44ad; font-size: 12px; padding: 5px; border-radius: 4px; border-left: 3px solid #8e44ad; }
-        .result-box { margin-top: 20px; background: #fdfefe; padding: 15px; border-radius: 8px; border: 2px solid #2c3e50; }
-        .genel-toplam { font-size: 1.1em; font-weight: bold; text-align: center; color: #2c3e50; margin-bottom: 10px; }
-        .tuketim-ozet { background: #fff3e0; padding: 10px; border-radius: 5px; font-size: 13px; border: 1px solid #e67e22; color: #d35400; margin-bottom: 10px; }
-        .kalem-maliyet { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 6px 0; font-size: 13px; color: #34495e; font-weight: bold;}
-        .kalem-maliyet:last-child { border-bottom: none; }
-        .stok-kalem { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #fff; border: 1px solid #ddd; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid #d35400; }
-        .stok-kirmizi { border-left-color: #e74c3c; background: #fdedec; }
-        .stok-yesil { border-left-color: #27ae60; background: #e8f8f5; }
-        
-        .saglik-tablo { width: 100%; border-collapse: collapse; background: #fff; font-size: 13px; text-align: left; }
-        .saglik-tablo th { background: #8e44ad; color: white; padding: 10px; }
-        .saglik-tablo td { border-bottom: 1px solid #ddd; padding: 10px; }
-        .btn-kucuk-sil { background: #e74c3c; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; width: auto; }
-        .btn-kucuk-sil:hover { background: #c0392b; }
-        
-        .yapimci-bilgi { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 14px; color: #7f8c8d; }
-        .yapimci-bilgi strong { color: #2c3e50; font-size: 16px; }
-        .sosyal-medya { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-        .sosyal-medya a { text-decoration: none; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-align: center; transition: 0.3s; }
-        .btn-instagram { background: #fdf2f6; color: #e1306c; border: 1px solid #fadbd8; }
-        .btn-instagram:hover { background: #e1306c; color: white; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
-    <h2>Yıldız Çiftlik Yönetim Sistemi</h2>
 
-    <div class="isletme-bar">
-        <div>
-            <span style="font-size: 12px; color: #bdc3c7; font-weight: bold;">Çalışılan Aktif İşletme:</span>
-            <select id="isletmeSecici" class="isletme-secici" onchange="isletmeDegistir(this.value)"></select>
-        </div>
-        <div class="isletme-butonlar">
-            <button class="btn-yeni-isletme" onclick="yeniIsletmeEkle()">+ YENİ İŞLETME</button>
-            <button class="btn-favori-isletme" onclick="favoriIsletmeKaydet()">⭐ FAVORİ YAP</button>
-            <button class="btn-isletme-sil" onclick="isletmeSil()">SİL</button>
-        </div>
+<div id="auth-ekrani" class="auth-container">
+    <div class="auth-card">
+        <h3 id="auth-baslik">Yıldız Çiftlik Giriş</h3>
+        <input type="email" id="auth-email" placeholder="E-posta Adresiniz">
+        <input type="password" id="auth-sifre" placeholder="Şifreniz">
+        <button id="btn-giris" onclick="girisYap()" class="btn-ekle" style="width: 100%;">Giriş Yap</button>
+        <button id="btn-kayit" onclick="kayitOl()" class="btn-yedek" style="width: 100%; margin-top:10px;">Kayıt Ol</button>
+        <p id="auth-hata" style="color:red; font-size:12px; margin-top:10px; font-weight:bold;"></p>
     </div>
+</div>
 
-    <div class="yedek-bar">
-        <button class="btn-yedek" onclick="yedekAl()">⬇ JSON YEDEK AL</button>
-        <button class="btn-yedek-yukle" onclick="document.getElementById('yedekDosyaInput').click()">⬆ YEDEĞİ GERİ YÜKLE</button>
-        <input type="file" id="yedekDosyaInput" accept=".json" style="display:none;" onchange="yedekYukle(event)">
-    </div>
+<div id="ana-uygulama" style="display:none;">
+    <div class="container">
+        <h2>Yıldız Çiftlik Yönetim Sistemi</h2>
+        
+        <button onclick="cikisYap()" class="btn-sil" style="margin-bottom:15px; width:100%;">❌ GÜVENLİ ÇIKIŞ YAP</button>
 
-    <div class="ana-modul-secici">
-        <button class="modul-btn aktif-modul" id="btn-besiModulu" onclick="modulDegistir('besiModulu', this)">🥩 BESİ YÖNETİMİ</button>
-        <button class="modul-btn" id="btn-damizlikModulu" onclick="modulDegistir('damizlikModulu', this)">🥛 DAMIZLIK YÖNETİMİ</button>
-    </div>
-
-    <div id="besiModulu" class="modul-icerik aktif-modul-icerik">
-        <div class="sekme-menu">
-            <button class="sekme-btn aktif" onclick="sekmeDegistir('rasyonSekmesi', this)">📋 Rasyon & Yem</button>
-            <button class="sekme-btn" onclick="sekmeDegistir('finansSekmesi', this)">💰 Finans & Maliyet</button>
-            <button class="sekme-btn" onclick="sekmeDegistir('stokSekmesi', this)">📦 Stok Takibi</button>
-            <button class="sekme-btn" onclick="sekmeDegistir('saglikSekmesi', this)">💉 Sağlık & Aşı</button>
+        <div class="isletme-bar">
+            <div>
+                <span style="font-size: 12px; color: #bdc3c7; font-weight: bold;">Çalışılan Aktif İşletme:</span>
+                <select id="isletmeSecici" class="isletme-secici" onchange="isletmeDegistir(this.value)"></select>
+            </div>
+            <div class="isletme-butonlar">
+                <button class="btn-yeni-isletme" onclick="yeniIsletmeEkle()">+ YENİ İŞLETME</button>
+                <button class="btn-favori-isletme" onclick="favoriIsletmeKaydet()">⭐ FAVORİ YAP</button>
+                <button class="btn-isletme-sil" onclick="isletmeSil()">SİL</button>
+            </div>
         </div>
 
-        <div id="rasyonSekmesi" class="sekme-icerik aktif-sekme">
-            <h3>Birim Fiyatlar ve Değerler</h3>
-            <div class="fiyat-grid">
-                <div class="form-group"><label>Arpa (kg/TL)</label><input type="number" id="fiyatArpa" step="0.1"></div>
-                <div class="form-group"><label>Arpa Torba (kg)</label><input type="number" id="arpaTorbaKg" placeholder="Örn: 43"></div>
-                <div class="form-group"><label>Mısır Flake (40kg)</label><input type="number" id="fiyatMisir" step="0.1"></div>
-                <div class="form-group"><label>Yem (50kg)</label><input type="number" id="fiyatYem" step="0.1"></div>
-                <div class="form-group"><label>Soya Küspesi (kg/TL)</label><input type="number" id="fiyatSoya" step="0.1"></div>
-                <div class="form-group"><label>Saman (kg/TL)</label><input type="number" id="fiyatSaman" step="0.1"></div>
+        <div class="yedek-bar">
+            <button class="btn-yedek" onclick="yedekAl()">⬇ JSON YEDEK AL</button>
+            <button class="btn-yedek-yukle" onclick="document.getElementById('yedekDosyaInput').click()">⬆ YEDEĞİ GERİ YÜKLE</button>
+            <input type="file" id="yedekDosyaInput" accept=".json" style="display:none;" onchange="yedekYukle(event)">
+        </div>
+
+        <div class="ana-modul-secici">
+            <button class="modul-btn aktif-modul" id="btn-besiModulu" onclick="modulDegistir('besiModulu', this)">🥩 BESİ YÖNETİMİ</button>
+            <button class="modul-btn" id="btn-damizlikModulu" onclick="modulDegistir('damizlikModulu', this)">🥛 DAMIZLIK YÖNETİMİ</button>
+        </div>
+
+        <div id="besiModulu" class="modul-icerik aktif-modul-icerik">
+            <div class="sekme-menu">
+                <button class="sekme-btn aktif" onclick="sekmeDegistir('rasyonSekmesi', this)">📋 Rasyon & Yem</button>
+                <button class="sekme-btn" onclick="sekmeDegistir('finansSekmesi', this)">💰 Finans & Maliyet</button>
+                <button class="sekme-btn" onclick="sekmeDegistir('stokSekmesi', this)">📦 Stok Takibi</button>
+                <button class="sekme-btn" onclick="sekmeDegistir('saglikSekmesi', this)">💉 Sağlık & Aşı</button>
             </div>
 
-            <div id="patoklar">
-                <div class="patok-card" id="patok_1">
-                    <h3>Patok 1 - Rasyon Bilgileri</h3>
-                    <div class="dortlu-grup">
-                        <div class="form-group"><label>Hayvan Sayısı</label><input type="number" id="p1_sayi"></div>
-                        <div class="form-group"><label>Canlı Kg</label><input type="number" id="p1_kg" placeholder="Örn: 350"></div>
-                        <div class="form-group"><label>Hedef Kg</label><input type="number" id="p1_hedef" placeholder="Örn: 600"></div>
-                        <div class="form-group"><label>Günlük Tahmini Artış</label><input type="number" id="p1_artis" placeholder="Örn: 1.35" step="0.01"></div>
+            <div id="rasyonSekmesi" class="sekme-icerik aktif-sekme">
+                <h3>Birim Fiyatlar ve Değerler</h3>
+                <div class="fiyat-grid">
+                    <div class="form-group"><label>Arpa (kg/TL)</label><input type="number" id="fiyatArpa" step="0.1"></div>
+                    <div class="form-group"><label>Arpa Torba (kg)</label><input type="number" id="arpaTorbaKg" placeholder="Örn: 43"></div>
+                    <div class="form-group"><label>Mısır Flake (40kg)</label><input type="number" id="fiyatMisir" step="0.1"></div>
+                    <div class="form-group"><label>Yem (50kg)</label><input type="number" id="fiyatYem" step="0.1"></div>
+                    <div class="form-group"><label>Soya Küspesi (kg/TL)</label><input type="number" id="fiyatSoya" step="0.1"></div>
+                    <div class="form-group"><label>Saman (kg/TL)</label><input type="number" id="fiyatSaman" step="0.1"></div>
+                </div>
+
+                <div id="patoklar">
+                    <div class="patok-card" id="patok_1">
+                        <h3>Patok 1 - Rasyon Bilgileri</h3>
+                        <div class="dortlu-grup">
+                            <div class="form-group"><label>Hayvan Sayısı</label><input type="number" id="p1_sayi"></div>
+                            <div class="form-group"><label>Canlı Kg</label><input type="number" id="p1_kg" placeholder="Örn: 350"></div>
+                            <div class="form-group"><label>Hedef Kg</label><input type="number" id="p1_hedef" placeholder="Örn: 600"></div>
+                            <div class="form-group"><label>Günlük Tahmini Artış</label><input type="number" id="p1_artis" placeholder="Örn: 1.35" step="0.01"></div>
+                        </div>
+                        <div class="ikili-grup">
+                            <div class="form-group"><label>Yem Proteini (%)</label><input type="number" id="p1_yemProtein" placeholder="Örn: 14" step="0.1"></div>
+                            <div class="form-group"><label>Yem Enerjisi (ME)</label><input type="number" id="p1_yemEnerji" placeholder="Örn: 2.6" step="0.1"></div>
+                        </div>
+                        <div class="grid-5">
+                            <div><label class="kucuk-label">Arpa (Top. kg)</label><input type="number" id="p1_arpa" step="0.1"></div>
+                            <div><label class="kucuk-label">Mısır (Top. kg)</label><input type="number" id="p1_misir" step="0.1"></div>
+                            <div><label class="kucuk-label">Yem (Top. kg)</label><input type="number" id="p1_yem" step="0.1"></div>
+                            <div><label class="kucuk-label">Soya (Top. kg)</label><input type="number" id="p1_soya" step="0.1"></div>
+                            <div><label class="kucuk-label">Saman (Top. kg)</label><input type="number" id="p1_saman" step="0.1"></div>
+                        </div>
+                        <div id="sonuc_p1" class="patok-ic-sonuc" style="display:none;"></div>
                     </div>
+                </div>
+
+                <div class="buton-grubu">
+                    <button class="btn-ekle" onclick="patokEkle()">+ YENİ PATOK EKLE</button>
+                    <button class="btn-sil" onclick="patokSil()">- İSTEDİĞİN PATOKU SİL</button>
+                </div>
+                
+                <div class="result-box" id="genelSonucAlani" style="display:none;"></div>
+            </div>
+
+            <div id="finansSekmesi" class="sekme-icerik">
+                <h3>Birim Maliyetler ve Kâr/Zarar Takibi</h3>
+                <div class="fiyat-grid">
+                    <div class="form-group"><label>Güncel Karkas Et Fiyatı (TL/kg)</label><input type="number" id="guncelEtFiyati" placeholder="Örn: 350"></div>
+                </div>
+
+                <div id="finansPatoklar">
+                    <div class="patok-card" id="finans_patok_1">
+                        <h3>Patok 1 - Finans Bilgileri</h3>
+                        <div class="uclu-grup">
+                            <div class="form-group"><label>Hayvan Başı Alış Fiyatı (TL)</label><input type="number" id="p1_alisFiyati" placeholder="Örn: 45000"></div>
+                            <div class="form-group"><label>İlk Alış Canlı Kg</label><input type="number" id="p1_alisKg" placeholder="Örn: 250"></div>
+                            <div class="form-group"><label>Sürüye Alış Tarihi</label><input type="date" id="p1_alisTarihi"></div>
+                        </div>
+                        <div class="uclu-grup">
+                            <div class="form-group"><label>Karkas Randımanı (%)</label><input type="number" id="p1_karkasRandiman" placeholder="Örn: 55" value="55"></div>
+                            <div class="form-group"><label>Fire Oranı (%)</label><input type="number" id="p1_fire" placeholder="Örn: 2" value="2"></div>
+                            <div class="form-group"><label>Aylık Canlı Kg Alışı</label><input type="number" id="p1_aylikArtis" placeholder="Örn: 40"></div>
+                        </div>
+                        <div id="finans_sonuc_p1" class="patok-ic-sonuc" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="stokSekmesi" class="sekme-icerik">
+                <h3>Depodaki Mevcut Stoklar</h3>
+                <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Sistem her gün otomatik olarak günlük tüketimi stoklarınızdan düşer.</p>
+                
+                <div class="patok-card">
                     <div class="ikili-grup">
-                        <div class="form-group"><label>Yem Proteini (%)</label><input type="number" id="p1_yemProtein" placeholder="Örn: 14" step="0.1"></div>
-                        <div class="form-group"><label>Yem Enerjisi (ME)</label><input type="number" id="p1_yemEnerji" placeholder="Örn: 2.6" step="0.1"></div>
+                        <div class="form-group">
+                            <label>Arpa Stok</label>
+                            <div class="stok-girdi">
+                                <input type="number" id="stokArpa" placeholder="Miktar" style="flex: 2;">
+                                <select id="stokArpaBirim" style="flex: 1.5;">
+                                    <option value="kg">kg</option>
+                                    <option value="torba">Torba</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>1 Torba Arpa (kg)</label>
+                            <input type="number" id="arpaTorbaKg_stok" disabled placeholder="Rasyondan Alınır" style="background:#ecf0f1;">
+                        </div>
                     </div>
-                    <div class="grid-5">
-                        <div><label class="kucuk-label">Arpa (Top. kg)</label><input type="number" id="p1_arpa" step="0.1"></div>
-                        <div><label class="kucuk-label">Mısır (Top. kg)</label><input type="number" id="p1_misir" step="0.1"></div>
-                        <div><label class="kucuk-label">Yem (Top. kg)</label><input type="number" id="p1_yem" step="0.1"></div>
-                        <div><label class="kucuk-label">Soya (Top. kg)</label><input type="number" id="p1_soya" step="0.1"></div>
-                        <div><label class="kucuk-label">Saman (Top. kg)</label><input type="number" id="p1_saman" step="0.1"></div>
-                    </div>
-                    <div id="sonuc_p1" class="patok-ic-sonuc" style="display:none;"></div>
+                    <div class="form-group"><label>Mısır Flake (Toplam Torba)</label><input type="number" id="stokMisir" placeholder="Örn: 120"></div>
+                    <div class="form-group"><label>Fabrika Yemi (Toplam Torba)</label><input type="number" id="stokYem" placeholder="Örn: 250"></div>
+                    <div class="form-group"><label>Soya Küspesi (Toplam kg)</label><input type="number" id="stokSoya" placeholder="Örn: 1500"></div>
+                    <div class="form-group"><label>Saman (Toplam kg)</label><input type="number" id="stokSaman" placeholder="Örn: 30000"></div>
                 </div>
+                
+                <div id="stokSonucAlani" style="display:none; margin-top: 20px;"></div>
             </div>
 
-            <div class="buton-grubu">
-                <button class="btn-ekle" onclick="patokEkle()">+ YENİ PATOK EKLE</button>
-                <button class="btn-sil" onclick="patokSil()">- İSTEDİĞİN PATOKU SİL</button>
-            </div>
-            
-            <div class="result-box" id="genelSonucAlani" style="display:none;"></div>
-        </div>
-
-        <div id="finansSekmesi" class="sekme-icerik">
-            <h3>Birim Maliyetler ve Kâr/Zarar Takibi</h3>
-            <div class="fiyat-grid">
-                <div class="form-group"><label>Güncel Karkas Et Fiyatı (TL/kg)</label><input type="number" id="guncelEtFiyati" placeholder="Örn: 350"></div>
-            </div>
-
-            <div id="finansPatoklar">
-                <div class="patok-card" id="finans_patok_1">
-                    <h3>Patok 1 - Finans Bilgileri</h3>
-                    <div class="uclu-grup">
-                        <div class="form-group"><label>Hayvan Başı Alış Fiyatı (TL)</label><input type="number" id="p1_alisFiyati" placeholder="Örn: 45000"></div>
-                        <div class="form-group"><label>İlk Alış Canlı Kg</label><input type="number" id="p1_alisKg" placeholder="Örn: 250"></div>
-                        <div class="form-group"><label>Sürüye Alış Tarihi</label><input type="date" id="p1_alisTarihi"></div>
+            <div id="saglikSekmesi" class="sekme-icerik">
+                <h3>Aşı ve İlaç Takibi</h3>
+                <div class="patok-card">
+                    <div class="dortlu-grup">
+                        <div class="form-group"><label>Patok Seç</label><select id="saglikPatokSec"></select></div>
+                        <div class="form-group"><label>Tarih</label><input type="date" id="saglikTarih"></div>
+                        <div class="form-group"><label>Aşı / İlaç Adı</label><input type="text" id="saglikIlac" placeholder="Örn: Çelerme"></div>
+                        <div class="form-group"><label>Doz / Tekrar</label><input type="text" id="saglikDoz" placeholder="Örn: 1. Doz"></div>
                     </div>
-                    <div class="uclu-grup">
-                        <div class="form-group"><label>Karkas Randımanı (%)</label><input type="number" id="p1_karkasRandiman" placeholder="Örn: 55" value="55"></div>
-                        <div class="form-group"><label>Fire Oranı (%)</label><input type="number" id="p1_fire" placeholder="Örn: 2" value="2"></div>
-                        <div class="form-group"><label>Aylık Canlı Kg Alışı</label><input type="number" id="p1_aylikArtis" placeholder="Örn: 40"></div>
-                    </div>
-                    <div id="finans_sonuc_p1" class="patok-ic-sonuc" style="display:none;"></div>
+                    <button onclick="saglikKaydet()" style="background-color: #8e44ad; margin-top: 10px;">SAĞLIK KAYDINI EKLE</button>
                 </div>
+                <div id="saglikGecmisi" style="margin-top: 20px; overflow-x: auto;"></div>
             </div>
         </div>
+        
+        <div id="damizlikModulu" class="modul-icerik">
+            <div class="sekme-menu">
+                <button class="sekme-btn aktif" onclick="sekmeDegistirDamizlik('inekKayitSekmesi', this)">🐄 İnek & Süt Kaydı</button>
+                <button class="sekme-btn" onclick="sekmeDegistirDamizlik('tohumlamaSekmesi', this)">🧬 Tohumlama & Gebelik</button>
+            </div>
 
-        <div id="stokSekmesi" class="sekme-icerik">
-            <h3>Depodaki Mevcut Stoklar</h3>
-            <p style="font-size: 13px; color: #7f8c8d; margin-bottom: 15px;">Sistem her gün otomatik olarak günlük tüketimi stoklarınızdan düşer.</p>
-            
-            <div class="patok-card">
-                <div class="ikili-grup">
-                    <div class="form-group">
-                        <label>Arpa Stok</label>
-                        <div class="stok-girdi">
-                            <input type="number" id="stokArpa" placeholder="Miktar" style="flex: 2;">
-                            <select id="stokArpaBirim" style="flex: 1.5;">
-                                <option value="kg">kg</option>
-                                <option value="torba">Torba</option>
+            <div id="inekKayitSekmesi" class="sekme-icerik aktif-sekme">
+                <h3>Sürü Listesi ve Günlük Süt Verimi</h3>
+                <div class="patok-card">
+                    <div class="dortlu-grup">
+                        <div class="form-group"><label>Küpe No / İsim</label><input type="text" id="inekKupe" placeholder="Örn: TR123 / Sarıkız"></div>
+                        <div class="form-group"><label>Laktasyon Sayısı</label><input type="number" id="inekLaktasyon" placeholder="Kaçıncı buzağısı?"></div>
+                        <div class="form-group"><label>Günlük Süt (Litre)</label><input type="number" id="inekSut" placeholder="Örn: 25" step="0.5"></div>
+                        <div class="form-group"><label>Durum</label>
+                            <select id="inekDurum">
+                                <option value="Sağmal">Sağmal (Süt Veriyor)</option>
+                                <option value="Kuru">Kuruda</option>
+                                <option value="Düve">Düve</option>
                             </select>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>1 Torba Arpa (kg)</label>
-                        <input type="number" id="arpaTorbaKg_stok" disabled placeholder="Rasyondan Alınır" style="background:#ecf0f1;">
+                    <button onclick="inekEkle()" style="background-color: #27ae60;">İNEK EKLE / BİLGİ GÜNCELLE</button>
+                </div>
+                <div id="sutOzetAlan" class="result-box" style="margin-top:15px; padding:10px; background:#e8f8f5; border-color:#27ae60; display:none;"></div>
+                <div id="inekListesiAlan" style="margin-top: 15px; overflow-x: auto;"></div>
+            </div>
+
+            <div id="tohumlamaSekmesi" class="sekme-icerik">
+                <h3>Tohumlama ve Doğum Takibi</h3>
+                <div class="patok-card">
+                    <div class="uclu-grup">
+                        <div class="form-group"><label>İnek Seç</label><select id="tohumlamaInekSec"></select></div>
+                        <div class="form-group"><label>Tohumlama Tarihi</label><input type="date" id="tohumTarihi"></div>
+                        <div class="form-group"><label>Boğa / Sperma Kodu</label><input type="text" id="spermaKodu" placeholder="Örn: Hoştayn - H123"></div>
                     </div>
+                    <button onclick="tohumlamaEkle()" style="background-color: #8e44ad;">TOHUMLAMA KAYDINI EKLE</button>
                 </div>
-                <div class="form-group"><label>Mısır Flake (Toplam Torba)</label><input type="number" id="stokMisir" placeholder="Örn: 120"></div>
-                <div class="form-group"><label>Fabrika Yemi (Toplam Torba)</label><input type="number" id="stokYem" placeholder="Örn: 250"></div>
-                <div class="form-group"><label>Soya Küspesi (Toplam kg)</label><input type="number" id="stokSoya" placeholder="Örn: 1500"></div>
-                <div class="form-group"><label>Saman (Toplam kg)</label><input type="number" id="stokSaman" placeholder="Örn: 30000"></div>
+                <p style="font-size: 12px; color: #7f8c8d; margin-top:10px;">* Tahmini doğum tarihi tohumlamadan itibaren 283 gün sayılarak otomatik hesaplanır. Kuruda kalma uyarısı doğuma 60 gün kala verilir.</p>
+                <div id="tohumlamaListesiAlan" style="margin-top: 15px; overflow-x: auto;"></div>
             </div>
-            
-            <div id="stokSonucAlani" style="display:none; margin-top: 20px;"></div>
         </div>
 
-        <div id="saglikSekmesi" class="sekme-icerik">
-            <h3>Aşı ve İlaç Takibi</h3>
-            <div class="patok-card">
-                <div class="dortlu-grup">
-                    <div class="form-group"><label>Patok Seç</label><select id="saglikPatokSec"></select></div>
-                    <div class="form-group"><label>Tarih</label><input type="date" id="saglikTarih"></div>
-                    <div class="form-group"><label>Aşı / İlaç Adı</label><input type="text" id="saglikIlac" placeholder="Örn: Çelerme"></div>
-                    <div class="form-group"><label>Doz / Tekrar</label><input type="text" id="saglikDoz" placeholder="Örn: 1. Doz"></div>
-                </div>
-                <button onclick="saglikKaydet()" style="background-color: #8e44ad; margin-top: 10px;">SAĞLIK KAYDINI EKLE</button>
+        <div class="yapimci-bilgi">
+            Geliştirici: <strong>Fatih Yıldız</strong>
+            <div class="sosyal-medya">
+                <a href="https://instagram.com/zfatihyildiz" target="_blank" class="btn-instagram">Instagram: @zfatihyildiz</a>
             </div>
-            <div id="saglikGecmisi" style="margin-top: 20px; overflow-x: auto;"></div>
         </div>
     </div>
-    
-    <div id="damizlikModulu" class="modul-icerik">
-        <div class="sekme-menu">
-            <button class="sekme-btn aktif" onclick="sekmeDegistirDamizlik('inekKayitSekmesi', this)">🐄 İnek & Süt Kaydı</button>
-            <button class="sekme-btn" onclick="sekmeDegistirDamizlik('tohumlamaSekmesi', this)">🧬 Tohumlama & Gebelik</button>
-        </div>
-
-        <div id="inekKayitSekmesi" class="sekme-icerik aktif-sekme">
-            <h3>Sürü Listesi ve Günlük Süt Verimi</h3>
-            <div class="patok-card">
-                <div class="dortlu-grup">
-                    <div class="form-group"><label>Küpe No / İsim</label><input type="text" id="inekKupe" placeholder="Örn: TR123 / Sarıkız"></div>
-                    <div class="form-group"><label>Laktasyon Sayısı</label><input type="number" id="inekLaktasyon" placeholder="Kaçıncı buzağısı?"></div>
-                    <div class="form-group"><label>Günlük Süt (Litre)</label><input type="number" id="inekSut" placeholder="Örn: 25" step="0.5"></div>
-                    <div class="form-group"><label>Durum</label>
-                        <select id="inekDurum">
-                            <option value="Sağmal">Sağmal (Süt Veriyor)</option>
-                            <option value="Kuru">Kuruda</option>
-                            <option value="Düve">Düve</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="inekEkle()" style="background-color: #27ae60;">İNEK EKLE / BİLGİ GÜNCELLE</button>
-            </div>
-            <div id="sutOzetAlan" class="result-box" style="margin-top:15px; padding:10px; background:#e8f8f5; border-color:#27ae60; display:none;"></div>
-            <div id="inekListesiAlan" style="margin-top: 15px; overflow-x: auto;"></div>
-        </div>
-
-        <div id="tohumlamaSekmesi" class="sekme-icerik">
-            <h3>Tohumlama ve Doğum Takibi</h3>
-            <div class="patok-card">
-                <div class="uclu-grup">
-                    <div class="form-group"><label>İnek Seç</label><select id="tohumlamaInekSec"></select></div>
-                    <div class="form-group"><label>Tohumlama Tarihi</label><input type="date" id="tohumTarihi"></div>
-                    <div class="form-group"><label>Boğa / Sperma Kodu</label><input type="text" id="spermaKodu" placeholder="Örn: Hoştayn - H123"></div>
-                </div>
-                <button onclick="tohumlamaEkle()" style="background-color: #8e44ad;">TOHUMLAMA KAYDINI EKLE</button>
-            </div>
-            <p style="font-size: 12px; color: #7f8c8d; margin-top:10px;">* Tahmini doğum tarihi tohumlamadan itibaren 283 gün sayılarak otomatik hesaplanır. Kuruda kalma uyarısı doğuma 60 gün kala verilir.</p>
-            <div id="tohumlamaListesiAlan" style="margin-top: 15px; overflow-x: auto;"></div>
-        </div>
-    </div>
-
-    <div class="yapimci-bilgi">
-        Geliştirici: <strong>Fatih Yıldız</strong>
-        <div class="sosyal-medya">
-            <a href="https://instagram.com/zfatihyildiz" target="_blank" class="btn-instagram">Instagram: @zfatihyildiz</a>
-        </div>
-    </div>
-
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
 <script>
-    // ─── YARDIMCI FONKSİYONLAR ───────────────────────────────────────────────
-    function escapeHTML(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
-    }
-
-    // ─── İŞLETME YÖNETİMİ ───────────────────────────────────────────────────
-    let isletmeler = JSON.parse(localStorage.getItem('isletmeListesi')) || [{id: '1', ad: 'Ana Çiftliğim'}];
-    
-    if (!sessionStorage.getItem('uygulamaBasladi')) {
-        let favId = localStorage.getItem('favoriIsletmeId');
-        if (favId && isletmeler.find(i => i.id === favId)) {
-            localStorage.setItem('aktifIsletmeId', favId);
-        }
-        sessionStorage.setItem('uygulamaBasladi', 'true');
-    }
-
-    let aktifIsletmeId = localStorage.getItem('aktifIsletmeId') || '1';
-    let aktifIsletme = isletmeler.find(i => i.id === aktifIsletmeId);
-    if (!aktifIsletme) {
-        aktifIsletme = isletmeler[0];
-        aktifIsletmeId = aktifIsletme.id;
-        localStorage.setItem('aktifIsletmeId', aktifIsletmeId);
-    }
-    
-    let APP_PREFIX = 'isletme_' + aktifIsletmeId + '_';
-    let patokSayisi = 1;
-
-    // Tüm kayıt edilecek alan ID listesi (hem rasyon hem finans)
-    const KAYIT_ALANLARI = [
-        'fiyatArpa','arpaTorbaKg','fiyatMisir','fiyatYem','fiyatSoya','fiyatSaman','guncelEtFiyati'
-    ];
-    const PATOK_ALANLARI = ['sayi','kg','hedef','artis','yemProtein','yemEnerji','arpa','misir','yem','soya','saman','alisFiyati','alisKg','alisTarihi','karkasRandiman','fire','aylikArtis'];
-    const STOK_ALANLARI  = ['stokArpa','stokMisir','stokYem','stokSoya','stokSaman'];
-    const ATLANACAK_ALANLAR = ['saglikTarih','saglikIlac','saglikDoz','saglikPatokSec','inekKupe','inekLaktasyon','inekSut','inekDurum','tohumTarihi','spermaKodu','tohumlamaInekSec'];
-
-    function isletmeDropdownDoldur() {
-        let select = document.getElementById('isletmeSecici');
-        select.innerHTML = '';
-        isletmeler.forEach(i => {
-            let opt = document.createElement('option');
-            opt.value = i.id;
-            let favYildiz = (i.id === localStorage.getItem('favoriIsletmeId')) ? ' ⭐ (Favori)' : '';
-            opt.text = i.ad + favYildiz;
-            if (i.id === aktifIsletmeId) opt.selected = true;
-            select.appendChild(opt);
-        });
-    }
-
-    function isletmeDegistir(id) {
-        localStorage.setItem('aktifIsletmeId', id);
-        location.reload();
-    }
-
-    function yeniIsletmeEkle() {
-        let ad = prompt("Yeni işletmenin adını giriniz:");
-        if (!ad) return;
-        let yeniId = Date.now().toString();
-        isletmeler.push({id: yeniId, ad: ad.trim()});
-        localStorage.setItem('isletmeListesi', JSON.stringify(isletmeler));
-        localStorage.setItem('aktifIsletmeId', yeniId);
-        location.reload();
-    }
-
-    function isletmeSil() {
-        if (isletmeler.length <= 1) {
-            alert("Tek kalan ana işletmeyi silemezsiniz!");
-            return;
-        }
-        if (confirm(aktifIsletme.ad + " işletmesini silmek istediğinize emin misiniz? Bütün verileri kalıcı olarak silinecek!")) {
-            let silinecekPrefix = 'isletme_' + aktifIsletmeId + '_';
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith(silinecekPrefix)) localStorage.removeItem(key);
-            });
-            isletmeler = isletmeler.filter(i => i.id !== aktifIsletmeId);
-            localStorage.setItem('isletmeListesi', JSON.stringify(isletmeler));
-            localStorage.setItem('aktifIsletmeId', isletmeler[0].id);
-            location.reload();
-        }
-    }
-
-    function favoriIsletmeKaydet() {
-        localStorage.setItem('favoriIsletmeId', aktifIsletmeId);
-        alert(aktifIsletme.ad + " işletmesi artık uygulamayı açtığınızda ilk olarak yüklenecek!");
-        isletmeDropdownDoldur();
-    }
-
-    // ─── YEDEK / GERİ YÜKLEME ───────────────────────────────────────────────
-    function yedekAl() {
-        let yedekVerisi = {};
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith(APP_PREFIX) || key === 'isletmeListesi' || key === 'aktifIsletmeId' || key === 'favoriIsletmeId') {
-                yedekVerisi[key] = localStorage.getItem(key);
-            }
-        });
-        let json = JSON.stringify(yedekVerisi, null, 2);
-        let blob = new Blob([json], {type: 'application/json'});
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement('a');
-        let tarih = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
-        a.href = url;
-        a.download = 'yildiz_ciftlik_yedek_' + tarih + '.json';
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    function yedekYukle(event) {
-        let dosya = event.target.files[0];
-        if (!dosya) return;
-        if (!confirm("Yedek yüklenecek. Mevcut veriler üzerine yazılacak. Emin misiniz?")) {
-            event.target.value = '';
-            return;
-        }
-        let reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                let veri = JSON.parse(e.target.result);
-                Object.keys(veri).forEach(key => {
-                    localStorage.setItem(key, veri[key]);
-                });
-                alert("Yedek başarıyla yüklendi! Sayfa yenileniyor...");
-                location.reload();
-            } catch(err) {
-                alert("Hata: Geçersiz yedek dosyası! (" + err.message + ")");
-            }
-        };
-        reader.readAsText(dosya);
-        event.target.value = '';
-    }
-
-    // ─── MODÜL / SEKME YÖNETİMİ ─────────────────────────────────────────────
-    function modulDegistir(modulId, btnElement) {
-        document.querySelectorAll('.modul-icerik').forEach(el => el.classList.remove('aktif-modul-icerik'));
-        document.querySelectorAll('.modul-btn').forEach(el => el.classList.remove('aktif-modul'));
-        document.getElementById(modulId).classList.add('aktif-modul-icerik');
-        btnElement.classList.add('aktif-modul');
-        localStorage.setItem('sonKullanilanModul', modulId);
-    }
-
-    function sekmeDegistir(sekmeId, btnElement) {
-        document.querySelectorAll('#besiModulu .sekme-icerik').forEach(el => el.classList.remove('aktif-sekme'));
-        document.querySelectorAll('#besiModulu .sekme-btn').forEach(el => el.classList.remove('aktif'));
-        document.getElementById(sekmeId).classList.add('aktif-sekme');
-        btnElement.classList.add('aktif');
-        if (sekmeId === 'stokSekmesi') {
-            let arpaTorbaDurum = document.getElementById('arpaTorbaKg').value || 43;
-            document.getElementById('arpaTorbaKg_stok').value = arpaTorbaDurum;
-            stokHesapla();
-        }
-    }
-
-    function sekmeDegistirDamizlik(sekmeId, btnElement) {
-        document.querySelectorAll('#damizlikModulu .sekme-icerik').forEach(el => el.classList.remove('aktif-sekme'));
-        document.querySelectorAll('#damizlikModulu .sekme-btn').forEach(el => el.classList.remove('aktif'));
-        document.getElementById(sekmeId).classList.add('aktif-sekme');
-        btnElement.classList.add('aktif');
-    }
-
-    // ─── INPUT DEĞİŞİKLİK DİNLEYİCİ ─────────────────────────────────────────
-    document.addEventListener('input', function(e) {
-        let hedef = e.target;
-        if (hedef.tagName.toLowerCase() === 'input' || hedef.tagName.toLowerCase() === 'select') {
-            if (!ATLANACAK_ALANLAR.includes(hedef.id)) {
-                hesapla();
-                // Stok sekmesi açıksa stok hesabını da güncelle (stokTarih'e dokunmadan)
-                let stokSekme = document.getElementById('stokSekmesi');
-                if (stokSekme && stokSekme.classList.contains('aktif-sekme')) {
-                    stokGoster();
-                }
-            }
-        }
-    });
-
-    // ─── SAYFA YÜKLENME ───────────────────────────────────────────────────────
-    window.onload = function() {
-        isletmeDropdownDoldur();
-
-        let sonModul = localStorage.getItem('sonKullanilanModul') || 'besiModulu';
-        let modulBtn = document.getElementById(sonModul === 'besiModulu' ? 'btn-besiModulu' : 'btn-damizlikModulu');
-        if (modulBtn) modulDegistir(sonModul, modulBtn);
-
-        // Patok sayısı yükleme
-        let kayitliPatokSayisi = localStorage.getItem(APP_PREFIX + 'patokSayisi');
-        if (kayitliPatokSayisi) {
-            let adet = parseInt(kayitliPatokSayisi);
-            for (let i = 2; i <= adet; i++) {
-                patokEkle(false);
-            }
-        }
-
-        // Sabit alanları yükle (fiyatlar + et fiyatı)
-        KAYIT_ALANLARI.forEach(id => {
-            let el = document.getElementById(id);
-            if (!el) return;
-            let val = localStorage.getItem(APP_PREFIX + id);
-            if (val !== null) el.value = val;
-        });
-
-        // Patok alanlarını yükle (rasyon + finans birlikte)
-        for (let i = 1; i <= patokSayisi; i++) {
-            PATOK_ALANLARI.forEach(alan => {
-                let el = document.getElementById('p' + i + '_' + alan);
-                if (!el) return;
-                let val = localStorage.getItem(APP_PREFIX + 'p' + i + '_' + alan);
-                if (val !== null) el.value = val;
-            });
-        }
-
-        // Stok alanlarını yükle
-        let arpaBirim = localStorage.getItem(APP_PREFIX + 'stokArpaBirim');
-        if (arpaBirim) document.getElementById('stokArpaBirim').value = arpaBirim;
-        STOK_ALANLARI.forEach(id => {
-            let val = localStorage.getItem(APP_PREFIX + id);
-            if (val !== null) document.getElementById(id).value = val;
-        });
-
-        // Sağlık sekme tarihi
-        let bugunFormat = new Date().toISOString().split('T')[0];
-        let saglikTarihi = document.getElementById('saglikTarih');
-        if (saglikTarihi) saglikTarihi.value = bugunFormat;
-
-        // FIX: otomatik stok düşme ÖNCE çalışır, stokHesapla SONRA
-        stokOtomatikDus();
-        hesapla();
-        stokGoster();
-        saglikPatokGuncelle();
-        saglikListele();
-        inekListele();
-        tohumlamaInekDoldur();
-        tohumlamaListele();
-    };
-
-    // ─── VERİ KAYIT YARDIMCISI ───────────────────────────────────────────────
-    function tumAlanlarıKaydet() {
-        KAYIT_ALANLARI.forEach(id => {
-            let el = document.getElementById(id);
-            if (el) localStorage.setItem(APP_PREFIX + id, el.value);
-        });
-        for (let i = 1; i <= patokSayisi; i++) {
-            PATOK_ALANLARI.forEach(alan => {
-                let el = document.getElementById('p' + i + '_' + alan);
-                if (el) localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.value);
-            });
-        }
-    }
-
-    // ─── OTOMATIK STOK DÜŞME ─────────────────────────────────────────────────
-    // FIX: Bu fonksiyon stokTarih'i yazar. stokHesapla/stokGoster asla yazmaz.
-    function stokOtomatikDus() {
-        let bugun = new Date();
-        bugun.setHours(0, 0, 0, 0);
-        let bugunTarih = bugun.getTime();
-        let sonTarih = localStorage.getItem(APP_PREFIX + 'stokTarih');
-
-        if (sonTarih) {
-            sonTarih = parseInt(sonTarih);
-            if (bugunTarih > sonTarih) {
-                let gunFarki = Math.round((bugunTarih - sonTarih) / (1000 * 60 * 60 * 24));
-
-                let gArpa  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_arpa'))  || 0;
-                let gMisir = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_misir')) || 0;
-                let gYem   = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_yem'))   || 0;
-                let gSoya  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_soya'))  || 0;
-                let gSaman = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_saman')) || 0;
-
-                let arpaBirim   = localStorage.getItem(APP_PREFIX + 'stokArpaBirim') || 'kg';
-                let sArpa       = parseFloat(localStorage.getItem(APP_PREFIX + 'stokArpa'))  || 0;
-                let sMisir      = parseFloat(localStorage.getItem(APP_PREFIX + 'stokMisir')) || 0;
-                let sYem        = parseFloat(localStorage.getItem(APP_PREFIX + 'stokYem'))   || 0;
-                let sSoya       = parseFloat(localStorage.getItem(APP_PREFIX + 'stokSoya'))  || 0;
-                let sSaman      = parseFloat(localStorage.getItem(APP_PREFIX + 'stokSaman')) || 0;
-                let arpaTorbaKg = parseFloat(localStorage.getItem(APP_PREFIX + 'arpaTorbaKg')) || 43;
-
-                let arpaKgOlarak = (arpaBirim === 'torba') ? (sArpa * arpaTorbaKg) : sArpa;
-                arpaKgOlarak = Math.max(0, arpaKgOlarak - (gArpa * gunFarki));
-                sMisir = Math.max(0, sMisir - (gMisir * gunFarki));
-                sYem   = Math.max(0, sYem   - (gYem   * gunFarki));
-                sSoya  = Math.max(0, sSoya  - (gSoya  * gunFarki));
-                sSaman = Math.max(0, sSaman - (gSaman * gunFarki));
-                sArpa  = (arpaBirim === 'torba') ? (arpaKgOlarak / arpaTorbaKg) : arpaKgOlarak;
-
-                let yeniStoklar = {
-                    stokArpa:  sArpa.toFixed(1),
-                    stokMisir: sMisir.toFixed(1),
-                    stokYem:   sYem.toFixed(1),
-                    stokSoya:  sSoya.toFixed(1),
-                    stokSaman: sSaman.toFixed(1)
-                };
-                Object.keys(yeniStoklar).forEach(key => {
-                    localStorage.setItem(APP_PREFIX + key, yeniStoklar[key]);
-                    let el = document.getElementById(key);
-                    if (el) el.value = yeniStoklar[key];
-                });
-
-                // Patok ağırlıklarını güncelle
-                let pSayisi = parseInt(localStorage.getItem(APP_PREFIX + 'patokSayisi')) || 1;
-                for (let i = 1; i <= pSayisi; i++) {
-                    let mevcutKg = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_kg')) || 0;
-                    let patokArtis = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_artis')) || 1.35;
-                    if (mevcutKg > 0) {
-                        let yeniKg = mevcutKg + (patokArtis * gunFarki);
-                        localStorage.setItem(APP_PREFIX + 'p' + i + '_kg', yeniKg.toFixed(1));
-                        let kgInput = document.getElementById('p' + i + '_kg');
-                        if (kgInput) kgInput.value = yeniKg.toFixed(1);
-                    }
-                }
-            }
-        }
-        // FIX: stokTarih SADECE burada güncellenir
-        localStorage.setItem(APP_PREFIX + 'stokTarih', bugunTarih);
-    }
-
-    // ─── PATOK EKLE / SİL ────────────────────────────────────────────────────
-    function patokEkle(kaydet = true) {
-        patokSayisi++;
-        
-        let rContainer = document.getElementById('patoklar');
-        let yPatok = document.createElement('div');
-        yPatok.className = 'patok-card';
-        yPatok.id = 'patok_' + patokSayisi;
-        yPatok.innerHTML = `
-            <h3>Patok ${patokSayisi} - Rasyon Bilgileri</h3>
-            <div class="dortlu-grup">
-                <div class="form-group"><label>Hayvan Sayısı</label><input type="number" id="p${patokSayisi}_sayi"></div>
-                <div class="form-group"><label>Canlı Kg</label><input type="number" id="p${patokSayisi}_kg" placeholder="Örn: 350"></div>
-                <div class="form-group"><label>Hedef Kg</label><input type="number" id="p${patokSayisi}_hedef" placeholder="Örn: 600"></div>
-                <div class="form-group"><label>Günlük Tahmini Artış</label><input type="number" id="p${patokSayisi}_artis" placeholder="Örn: 1.35" step="0.01"></div>
-            </div>
-            <div class="ikili-grup">
-                <div class="form-group"><label>Yem Proteini (%)</label><input type="number" id="p${patokSayisi}_yemProtein" placeholder="Örn: 14" step="0.1"></div>
-                <div class="form-group"><label>Yem Enerjisi (ME)</label><input type="number" id="p${patokSayisi}_yemEnerji" placeholder="Örn: 2.6" step="0.1"></div>
-            </div>
-            <div class="grid-5">
-                <div><label class="kucuk-label">Arpa (Top. kg)</label><input type="number" id="p${patokSayisi}_arpa" step="0.1"></div>
-                <div><label class="kucuk-label">Mısır (Top. kg)</label><input type="number" id="p${patokSayisi}_misir" step="0.1"></div>
-                <div><label class="kucuk-label">Yem (Top. kg)</label><input type="number" id="p${patokSayisi}_yem" step="0.1"></div>
-                <div><label class="kucuk-label">Soya (Top. kg)</label><input type="number" id="p${patokSayisi}_soya" step="0.1"></div>
-                <div><label class="kucuk-label">Saman (Top. kg)</label><input type="number" id="p${patokSayisi}_saman" step="0.1"></div>
-            </div>
-            <div id="sonuc_p${patokSayisi}" class="patok-ic-sonuc" style="display:none;"></div>
-        `;
-        rContainer.appendChild(yPatok);
-
-        let fContainer = document.getElementById('finansPatoklar');
-        let fPatok = document.createElement('div');
-        fPatok.className = 'patok-card';
-        fPatok.id = 'finans_patok_' + patokSayisi;
-        fPatok.innerHTML = `
-            <h3>Patok ${patokSayisi} - Finans Bilgileri</h3>
-            <div class="uclu-grup">
-                <div class="form-group"><label>Hayvan Başı Alış Fiyatı (TL)</label><input type="number" id="p${patokSayisi}_alisFiyati" placeholder="Örn: 45000"></div>
-                <div class="form-group"><label>İlk Alış Canlı Kg</label><input type="number" id="p${patokSayisi}_alisKg" placeholder="Örn: 250"></div>
-                <div class="form-group"><label>Sürüye Alış Tarihi</label><input type="date" id="p${patokSayisi}_alisTarihi"></div>
-            </div>
-            <div class="uclu-grup">
-                <div class="form-group"><label>Karkas Randımanı (%)</label><input type="number" id="p${patokSayisi}_karkasRandiman" placeholder="Örn: 55" value="55"></div>
-                <div class="form-group"><label>Fire Oranı (%)</label><input type="number" id="p${patokSayisi}_fire" placeholder="Örn: 2" value="2"></div>
-                <div class="form-group"><label>Aylık Canlı Kg Alışı</label><input type="number" id="p${patokSayisi}_aylikArtis" placeholder="Örn: 40"></div>
-            </div>
-            <div id="finans_sonuc_p${patokSayisi}" class="patok-ic-sonuc" style="display:none;"></div>
-        `;
-        fContainer.appendChild(fPatok);
-
-        if (kaydet) localStorage.setItem(APP_PREFIX + 'patokSayisi', patokSayisi);
-        saglikPatokGuncelle();
-    }
-
-    function patokSil() {
-        if (patokSayisi <= 1) {
-            alert("Sistemde en az 1 patok kalmalıdır!");
-            return;
-        }
-
-        let silId = prompt("Kaç numaralı patoku silmek istiyorsun? (Mevcut Patoklar: 1 ile " + patokSayisi + " arası)");
-        if (!silId) return;
-        
-        silId = parseInt(silId);
-        if (isNaN(silId) || silId < 1 || silId > patokSayisi) {
-            alert("Hatalı bir patok numarası girdin!");
-            return;
-        }
-
-        if (!confirm(silId + " numaralı patoku ve ona ait tüm verileri / aşı kayıtlarını siliyorum. Emin misin?")) return;
-
-        // Verileri öne kaydır
-        for (let i = silId; i < patokSayisi; i++) {
-            let sonrakiId = i + 1;
-            PATOK_ALANLARI.forEach(alan => {
-                let sonrakiDeger = localStorage.getItem(APP_PREFIX + 'p' + sonrakiId + '_' + alan);
-                if (sonrakiDeger !== null) {
-                    localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, sonrakiDeger);
-                } else {
-                    localStorage.removeItem(APP_PREFIX + 'p' + i + '_' + alan);
-                }
-            });
-        }
-        
-        // Son patok verisini temizle
-        PATOK_ALANLARI.forEach(alan => {
-            localStorage.removeItem(APP_PREFIX + 'p' + patokSayisi + '_' + alan);
-        });
-
-        // Sağlık kayıtlarını güncelle
-        let saglikKayitlari = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
-        let yeniSaglik = [];
-        saglikKayitlari.forEach(k => {
-            let pNo = parseInt(k.patok);
-            if (pNo === silId) {
-                // Silinen - ekleme
-            } else if (pNo > silId) {
-                k.patok = String(pNo - 1);
-                yeniSaglik.push(k);
-            } else {
-                yeniSaglik.push(k);
-            }
-        });
-        localStorage.setItem(APP_PREFIX + 'saglik', JSON.stringify(yeniSaglik));
-
-        patokSayisi--;
-        localStorage.setItem(APP_PREFIX + 'patokSayisi', patokSayisi);
-        
-        alert("Patok başarıyla silindi ve sıralama güncellendi!");
-        location.reload();
-    }
-
-    // ─── HESAPLA (RASYON + FİNANS) ───────────────────────────────────────────
-    function hesapla() {
-        let fArpa       = parseFloat(document.getElementById('fiyatArpa').value)  || 0;
-        let fSaman      = parseFloat(document.getElementById('fiyatSaman').value) || 0;
-        let fSoya       = parseFloat(document.getElementById('fiyatSoya').value)  || 0;
-        let fMisirTorba = parseFloat(document.getElementById('fiyatMisir').value) || 0;
-        let fMisir      = fMisirTorba / 40;
-        let fYemTorba   = parseFloat(document.getElementById('fiyatYem').value)   || 0;
-        let fYem        = fYemTorba / 50;
-        
-        let hpArpa  = 11,   meArpa  = 2.8;
-        let hpMisir = 8.5,  meMisir = 3.1;
-        let hpSoya  = 44,   meSoya  = 2.8;
-
-        let etFiyati = parseFloat(document.getElementById('guncelEtFiyati').value) || 0;
-
-        let genelGider     = 0;
-        let genelArpaGider = 0, genelMisirGider = 0, genelYemGider = 0;
-        let genelSoyaGider = 0, genelSamanGider = 0;
-        let genelArpaKg = 0, genelMisirKg = 0, genelYemKg = 0, genelSoyaKg = 0, genelSamanKg = 0;
-
-        for (let i = 1; i <= patokSayisi; i++) {
-            let s      = parseFloat(document.getElementById('p' + i + '_sayi').value)   || 0;
-            let ckg    = parseFloat(document.getElementById('p' + i + '_kg').value)     || 0;
-            let hkg    = parseFloat(document.getElementById('p' + i + '_hedef').value)  || 0;
-            let artis  = parseFloat(document.getElementById('p' + i + '_artis').value)  || 1.35;
-            
-            let yemProtein = parseFloat(document.getElementById('p' + i + '_yemProtein').value) || 14;
-            let meYem      = parseFloat(document.getElementById('p' + i + '_yemEnerji').value)  || 2.6;
-            
-            let alisTarihi  = document.getElementById('p' + i + '_alisTarihi').value;
-            let alisFiyati  = parseFloat(document.getElementById('p' + i + '_alisFiyati').value) || 0;
-            let alisKg      = parseFloat(document.getElementById('p' + i + '_alisKg').value)     || 0;
-            let karkasRandiman = parseFloat(document.getElementById('p' + i + '_karkasRandiman').value) || 55;
-            let fireOrani      = parseFloat(document.getElementById('p' + i + '_fire').value)          || 0;
-            let aylikArtisInput = parseFloat(document.getElementById('p' + i + '_aylikArtis').value);
-
-            let a_toplam  = parseFloat(document.getElementById('p' + i + '_arpa').value)  || 0;
-            let m_toplam  = parseFloat(document.getElementById('p' + i + '_misir').value) || 0;
-            let y_toplam  = parseFloat(document.getElementById('p' + i + '_yem').value)   || 0;
-            let sy_toplam = parseFloat(document.getElementById('p' + i + '_soya').value)  || 0;
-            let sm_toplam = parseFloat(document.getElementById('p' + i + '_saman').value) || 0;
-
-            let patokKesifKg = a_toplam + m_toplam + y_toplam + sy_toplam;
-
-            genelArpaKg  += a_toplam;
-            genelMisirKg += m_toplam;
-            genelYemKg   += y_toplam;
-            genelSoyaKg  += sy_toplam;
-            genelSamanKg += sm_toplam;
-
-            let arpaMaliyet  = a_toplam  * fArpa;
-            let misirMaliyet = m_toplam  * fMisir;
-            let yemMaliyet   = y_toplam  * fYem;
-            let soyaMaliyet  = sy_toplam * fSoya;
-            let samanMaliyet = sm_toplam * fSaman;
-            let pt_maliyet   = arpaMaliyet + misirMaliyet + yemMaliyet + soyaMaliyet + samanMaliyet;
-            
-            genelArpaGider  += arpaMaliyet;
-            genelMisirGider += misirMaliyet;
-            genelYemGider   += yemMaliyet;
-            genelSoyaGider  += soyaMaliyet;
-            genelSamanGider += samanMaliyet;
-            genelGider      += pt_maliyet;
-            
-            let hb_maliyet = 0, a_hb = 0, m_hb = 0, y_hb = 0, sy_hb = 0, kesifKilo_hb = 0;
-            let rasyonHP = 0, rasyonME = 0, oneriHP = 0, oneriME = 0;
-            let kesimMetni = "";
-            let iceridekiGun = 0;
-
-            if (alisTarihi) {
-                let d1 = new Date(alisTarihi);
-                let d2 = new Date();
-                d1.setHours(0,0,0,0); d2.setHours(0,0,0,0);
-                if (d2 >= d1) iceridekiGun = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-            }
-            
-            if (s > 0) {
-                hb_maliyet   = pt_maliyet / s;
-                a_hb         = a_toplam  / s;
-                m_hb         = m_toplam  / s;
-                y_hb         = y_toplam  / s;
-                sy_hb        = sy_toplam / s;
-                kesifKilo_hb = a_hb + m_hb + y_hb + sy_hb;
-                
-                if (kesifKilo_hb > 0) {
-                    rasyonHP = ((a_hb * hpArpa) + (m_hb * hpMisir) + (y_hb * yemProtein) + (sy_hb * hpSoya)) / kesifKilo_hb;
-                    rasyonME = ((a_hb * meArpa) + (m_hb * meMisir) + (y_hb * meYem)       + (sy_hb * meSoya)) / kesifKilo_hb;
-                }
-
-                if (ckg > 0) {
-                    if (ckg < 250)       { oneriHP = 15.0; oneriME = 2.60; }
-                    else if (ckg < 350)  { oneriHP = 14.0; oneriME = 2.70; }
-                    else if (ckg < 450)  { oneriHP = 13.0; oneriME = 2.80; }
-                    else                 { oneriHP = 12.0; oneriME = 2.90; }
-                }
-
-                if (ckg > 0 && hkg > 0) {
-                    if (ckg >= hkg) {
-                        kesimMetni = `<div class="hedef-kutu" style="color:#27ae60; border-color:#27ae60; background:#e8f8f5;">Hedef kesim kilosuna ulaşıldı! (${ckg.toFixed(1)} kg)</div>`;
-                    } else {
-                        let kalanKg  = hkg - ckg;
-                        let kalanGun = Math.ceil(kalanKg / artis);
-                        let kesimTarihi = new Date();
-                        kesimTarihi.setDate(kesimTarihi.getDate() + kalanGun);
-                        let tarihMetni = kesimTarihi.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
-                        kesimMetni = `<div class="hedef-kutu">Hedef Kesim (${hkg} kg): Kalan ${kalanGun} Gün ➔ <strong>${tarihMetni}</strong> <br><span style="font-size:10px; font-weight:normal;">(Rasyondaki ${artis} kg artış ile hesaplandı)</span></div>`;
-                    }
-                }
-            }
-
-            let oneriMetni = ckg > 0 ? `<div class="oneri-kutu">Hedef (Önerilen) ➔ HP: %${oneriHP.toFixed(1)} | ME: ${oneriME.toFixed(2)} Mcal</div>` : "";
-            
-            let patokSonucDiv = document.getElementById('sonuc_p' + i);
-            if (patokSonucDiv) {
-                if (s > 0 || pt_maliyet > 0) {
-                    patokSonucDiv.innerHTML = `
-                        <div><strong>Patok Toplam Kesif Yem:</strong> <span style="color:#e67e22;">${patokKesifKg.toFixed(1)} kg</span></div>
-                        <div><strong>Günlük Toplam Rasyon Gideri:</strong> ${pt_maliyet.toFixed(2)} TL | <strong>Mal Başı:</strong> <span style="color:#c0392b; font-size:15px;">${hb_maliyet.toFixed(2)} TL</span></div>
-                        <div class="tuketim-kutu">
-                            <strong>Mal Başı Kesif Yem (${kesifKilo_hb.toFixed(1)} kg):</strong><br>
-                            Arpa: ${a_hb.toFixed(1)} kg | Mısır Flake: ${m_hb.toFixed(1)} kg | Yem: ${y_hb.toFixed(1)} kg | Soya: ${sy_hb.toFixed(1)} kg
-                        </div>
-                        <div class="deger-kutu">Mevcut Rasyon ➔ HP: %${rasyonHP.toFixed(1)} | ME: ${rasyonME.toFixed(2)} Mcal</div>
-                        ${oneriMetni}
-                        ${kesimMetni}
-                    `;
-                    patokSonucDiv.style.display = 'block';
-                } else {
-                    patokSonucDiv.style.display = 'none';
-                }
-            }
-
-            let finansSonucDiv = document.getElementById('finans_sonuc_p' + i);
-            if (finansSonucDiv) {
-                if (s > 0 && ckg > 0) {
-                    let finansGunlukArtis = artis;
-                    if (aylikArtisInput > 0) {
-                        finansGunlukArtis = aylikArtisInput / 30.44;
-                    }
-
-                    let tuketimKatsayisi = 1;
-                    if (alisKg > 0 && ckg >= alisKg) {
-                        let ortalamaKg = (alisKg + ckg) / 2;
-                        tuketimKatsayisi = ortalamaKg / ckg;
-                    }
-
-                    let yagliKarkasKg    = ckg * (karkasRandiman / 100);
-                    let fireKg           = yagliKarkasKg * (fireOrani / 100);
-                    let netEtKg          = yagliKarkasKg - fireKg;
-                    
-                    let brutDeger        = yagliKarkasKg * etFiyati;
-                    let fireKesintiTL    = fireKg * etFiyati;
-                    let netSatisDegeri   = brutDeger - fireKesintiTL;
-
-                    let toplamKesintiOrani    = fireOrani;
-                    let gunlukYagliKarkasArtisi = finansGunlukArtis * (karkasRandiman / 100);
-                    let gunlukNetKarkasArtisi   = gunlukYagliKarkasArtisi * (1 - (toplamKesintiOrani / 100));
-                    
-                    let birimKarkasMaliyet = (gunlukNetKarkasArtisi > 0) ? (hb_maliyet / gunlukNetKarkasArtisi) : 0;
-                    
-                    let ortalamaGecmisMaliyet = hb_maliyet * tuketimKatsayisi;
-                    let toplamYedirilenYem    = iceridekiGun * ortalamaGecmisMaliyet;
-                    let guncelMaliyet         = alisFiyati + toplamYedirilenYem;
-                    
-                    let tahminiKarZarar = netSatisDegeri - guncelMaliyet;
-                    let karZararRenk    = tahminiKarZarar >= 0 ? "27ae60" : "e74c3c";
-                    let karZararBg      = tahminiKarZarar >= 0 ? "e8f8f5" : "fdedec";
-
-                    let alisKilosuMetni = alisKg > 0 ? `(İlk Alış: ${alisKg} kg)` : ``;
-                    let beklenenCanliKgMetni = "";
-                    
-                    if (alisKg > 0 && iceridekiGun > 0) {
-                        let beklenenKg  = alisKg + (iceridekiGun * finansGunlukArtis);
-                        let aciklamaMetni = aylikArtisInput > 0 ? `Aylık ${aylikArtisInput} kg hedefine göre` : `Günlük ${artis} kg hedefine göre`;
-                        beklenenCanliKgMetni = `<div style="margin-bottom: 5px;"><strong>Olması Gereken Canlı Kg:</strong> <span style="color:#2980b9; font-size:15px;">${beklenenKg.toFixed(1)} kg</span> <span style="font-size:11px; color:#7f8c8d;">(${aciklamaMetni})</span></div>`;
-                    }
-
-                    finansSonucDiv.innerHTML = `
-                        <div style="margin-bottom: 5px;"><strong>İçerideki Süre:</strong> <span style="color:#8e44ad; font-size:15px;">${iceridekiGun} Gün</span></div>
-                        ${beklenenCanliKgMetni}
-                        
-                        <table style="width:100%; font-size:12px; border-collapse:collapse; margin-top:10px; margin-bottom:10px; background:#fff; border:1px solid #ddd; border-radius:5px; overflow:hidden;">
-                            <tr style="background:#2c3e50; color:white;">
-                                <th style="padding:6px; text-align:left;">Karkas Analizi</th>
-                                <th style="padding:6px; text-align:right;">Miktar</th>
-                                <th style="padding:6px; text-align:right;">Değer</th>
-                            </tr>
-                            <tr>
-                                <td style="padding:6px; border-bottom:1px solid #eee;">Brüt Yağlı Karkas (%${karkasRandiman})</td>
-                                <td style="padding:6px; text-align:right; border-bottom:1px solid #eee; font-weight:bold;">${yagliKarkasKg.toFixed(1)} kg</td>
-                                <td style="padding:6px; text-align:right; border-bottom:1px solid #eee;">${brutDeger.toFixed(2)} ₺</td>
-                            </tr>
-                            <tr>
-                                <td style="padding:6px; border-bottom:1px solid #eee; color:#e74c3c;">- Fire / Fire Kaybı (%${fireOrani})</td>
-                                <td style="padding:6px; text-align:right; border-bottom:1px solid #eee; color:#e74c3c;">-${fireKg.toFixed(1)} kg</td>
-                                <td style="padding:6px; text-align:right; border-bottom:1px solid #eee; color:#e74c3c;">-${fireKesintiTL.toFixed(2)} ₺</td>
-                            </tr>
-                            <tr style="background:#e8f8f5;">
-                                <td style="padding:6px; font-weight:bold; color:#27ae60;">NET SATILABİLİR ET</td>
-                                <td style="padding:6px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">${netEtKg.toFixed(1)} kg</td>
-                                <td style="padding:6px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">${netSatisDegeri.toFixed(2)} ₺</td>
-                            </tr>
-                        </table>
-                        
-                        <div style="margin-bottom: 5px; padding-top: 5px; border-top: 1px dashed #ccc;">
-                            <strong>1 KG <span style="color:#c0392b;">NET YAĞSIZ ETİN</span> YEM MALİYETİ:</strong>
-                            <span style="color:#c0392b; font-size:16px;">${birimKarkasMaliyet.toFixed(2)} TL</span>
-                        </div>
-                        
-                        <div class="tuketim-kutu">
-                            <strong>Maliyet Tablosu (Hayvan Başı)</strong><br>
-                            Alış Maliyeti: ${alisFiyati.toFixed(2)} TL <span style="font-size:11px; color:#7f8c8d;">${alisKilosuMetni}</span><br>
-                            Toplam Yedirilen Yem: ${toplamYedirilenYem.toFixed(2)} TL <span style="font-size:10px; color:#7f8c8d;">(Büyüme ortalamasıyla hesaplandı)</span><br>
-                            <span style="color:#e74c3c; font-size:13px;"><strong>Güncel Toplam Maliyet: ${guncelMaliyet.toFixed(2)} TL</strong></span>
-                        </div>
-
-                        <div class="hedef-kutu" style="background:#${karZararBg}; border-color:#${karZararRenk}; color:#${karZararRenk}; margin-top:8px;">
-                            <strong>Bugün Kesilirse Net Kâr/Zarar:</strong> ${tahminiKarZarar.toFixed(2)} TL
-                        </div>
-                    `;
-                    finansSonucDiv.style.display = 'block';
-                } else {
-                    finansSonucDiv.style.display = 'none';
-                }
-            }
-        }
-
-        let genelYemTorba   = genelYemKg   / 50;
-        let genelMisirTorba = genelMisirKg / 40;
-
-        // Tüketim değerlerini kaydet (stokOtomatikDus için)
-        localStorage.setItem(APP_PREFIX + 'tuketim_arpa',  genelArpaKg);
-        localStorage.setItem(APP_PREFIX + 'tuketim_misir', genelMisirTorba);
-        localStorage.setItem(APP_PREFIX + 'tuketim_yem',   genelYemTorba);
-        localStorage.setItem(APP_PREFIX + 'tuketim_soya',  genelSoyaKg);
-        localStorage.setItem(APP_PREFIX + 'tuketim_saman', genelSamanKg);
-
-        let genelSonucHTML = `
-            <div class="genel-toplam">GENEL AHIR GÜNLÜK RASYON GİDERİ<br><span style="color:#c0392b;">Günlük: ${genelGider.toFixed(2)} TL | Aylık: ${(genelGider * 30).toFixed(2)} TL</span></div>
-            <div class="tuketim-ozet">
-                <strong style="color: #2c3e50; font-size: 14px;">GÜNLÜK / AYLIK TOPLAM TÜKETİM:</strong><br>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f39c12; padding: 4px 0;"><span>Arpa:</span> <span><strong>${genelArpaKg.toFixed(1)} kg</strong>/Gün | <strong>${(genelArpaKg * 30).toFixed(0)} kg</strong>/Ay</span></div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f39c12; padding: 4px 0;"><span>Mısır Flake:</span> <span><strong>${genelMisirTorba.toFixed(1)} Torba</strong>/Gün | <strong>${(genelMisirTorba * 30).toFixed(0)} Torba</strong>/Ay</span></div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f39c12; padding: 4px 0;"><span>Fabrika Yemi:</span> <span><strong>${genelYemTorba.toFixed(1)} Torba</strong>/Gün | <strong>${(genelYemTorba * 30).toFixed(0)} Torba</strong>/Ay</span></div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #f39c12; padding: 4px 0;"><span>Soya Küspesi:</span> <span><strong>${genelSoyaKg.toFixed(1)} kg</strong>/Gün | <strong>${(genelSoyaKg * 30).toFixed(0)} kg</strong>/Ay</span></div>
-                <div style="display: flex; justify-content: space-between; padding: 4px 0;"><span>Saman:</span> <span><strong>${genelSamanKg.toFixed(1)} kg</strong>/Gün | <strong>${(genelSamanKg * 30).toFixed(0)} kg</strong>/Ay</span></div>
-            </div>
-            <div style="margin-top: 15px;">
-                <div class="kalem-maliyet"><span>Arpa Ezme Gideri:</span> <span>${genelArpaGider.toFixed(2)} TL/Gün | ${(genelArpaGider*30).toFixed(2)} TL/Ay</span></div>
-                <div class="kalem-maliyet"><span>Mısır Flake Gideri:</span> <span>${genelMisirGider.toFixed(2)} TL/Gün | ${(genelMisirGider*30).toFixed(2)} TL/Ay</span></div>
-                <div class="kalem-maliyet"><span>Fabrika Yemi Gideri:</span> <span>${genelYemGider.toFixed(2)} TL/Gün | ${(genelYemGider*30).toFixed(2)} TL/Ay</span></div>
-                <div class="kalem-maliyet"><span>Soya Küspesi Gideri:</span> <span>${genelSoyaGider.toFixed(2)} TL/Gün | ${(genelSoyaGider*30).toFixed(2)} TL/Ay</span></div>
-                <div class="kalem-maliyet"><span>Saman Gideri:</span> <span>${genelSamanGider.toFixed(2)} TL/Gün | ${(genelSamanGider*30).toFixed(2)} TL/Ay</span></div>
-            </div>
-        `;
-
-        let genelAlan = document.getElementById('genelSonucAlani');
-        if (genelGider > 0 || patokSayisi > 0) {
-            genelAlan.innerHTML = genelSonucHTML;
-            genelAlan.style.display = 'block';
-        } else {
-            genelAlan.style.display = 'none';
-        }
-
-        // Tüm alanları kaydet
-        tumAlanlarıKaydet();
-    }
-
-    // ─── STOK GÖSTER (stokTarih'e DOKUNMAZ) ─────────────────────────────────
-    // FIX: stokHesapla → stokGoster olarak yeniden adlandırıldı.
-    // stokTarih'i asla güncellemez; sadece okur ve gösterir.
-    function stokGoster() {
-        let sArpa    = parseFloat(document.getElementById('stokArpa').value)  || 0;
-        let arpaBirim = document.getElementById('stokArpaBirim').value;
-        let sMisir   = parseFloat(document.getElementById('stokMisir').value) || 0;
-        let sYem     = parseFloat(document.getElementById('stokYem').value)   || 0;
-        let sSoya    = parseFloat(document.getElementById('stokSoya').value)  || 0;
-        let sSaman   = parseFloat(document.getElementById('stokSaman').value) || 0;
-
-        let gArpa  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_arpa'))  || 0;
-        let gMisir = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_misir')) || 0;
-        let gYem   = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_yem'))   || 0;
-        let gSoya  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_soya'))  || 0;
-        let gSaman = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_saman')) || 0;
-
-        // Stok değerlerini kaydet (stokTarih'e dokunmadan)
-        localStorage.setItem(APP_PREFIX + 'stokArpa',   sArpa);
-        localStorage.setItem(APP_PREFIX + 'stokMisir',  sMisir);
-        localStorage.setItem(APP_PREFIX + 'stokYem',    sYem);
-        localStorage.setItem(APP_PREFIX + 'stokSoya',   sSoya);
-        localStorage.setItem(APP_PREFIX + 'stokSaman',  sSaman);
-        localStorage.setItem(APP_PREFIX + 'stokArpaBirim', arpaBirim);
-
-        let arpaTorbaKgVal  = parseFloat(document.getElementById('arpaTorbaKg').value) || 43;
-        let arpaKgOlarak = (arpaBirim === 'torba') ? (sArpa * arpaTorbaKgVal) : sArpa;
-
-        function bitisTarihiBul(stokMiktari, gunlukTuketim, isim) {
-            let isimGuveli = escapeHTML(isim);
-            if (stokMiktari <= 0) return `<div class="stok-kalem stok-kirmizi"><div><strong>${isimGuveli}</strong><br><span style="color:#e74c3c; font-size:12px;">Stokta hiç ürün yok!</span></div></div>`;
-            if (gunlukTuketim <= 0) return `<div class="stok-kalem"><div><strong>${isimGuveli}</strong><br><span style="color:#7f8c8d; font-size:12px;">Rasyonda kullanılmıyor.</span></div></div>`;
-            
-            let kalanGun = Math.floor(stokMiktari / gunlukTuketim);
-            let tarih = new Date();
-            tarih.setDate(tarih.getDate() + kalanGun);
-            let tarihMetni = tarih.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-            let sinif  = kalanGun <= 7 ? "stok-kirmizi" : "stok-yesil";
-            let uyari  = kalanGun <= 7 ? " (Kritik Seviye)" : "";
-
-            return `
-                <div class="stok-kalem ${sinif}">
-                    <div>
-                        <strong>${isimGuveli}</strong><span style="color:#e74c3c; font-size:11px;">${uyari}</span><br>
-                        <span style="font-size:12px; color:#555;">Kalan: ${kalanGun} Gün</span>
-                    </div>
-                    <div style="text-align:right; font-size:13px; font-weight:bold; color:#2c3e50;">
-                        ${tarihMetni}
-                    </div>
-                </div>
-            `;
-        }
-
-        let html = `
-            ${bitisTarihiBul(arpaKgOlarak, gArpa,  "Arpa")}
-            ${bitisTarihiBul(sMisir,        gMisir, "Mısır Flake")}
-            ${bitisTarihiBul(sYem,          gYem,   "Fabrika Yemi")}
-            ${bitisTarihiBul(sSoya,         gSoya,  "Soya Küspesi")}
-            ${bitisTarihiBul(sSaman,        gSaman, "Saman")}
-        `;
-
-        let stokSonuc = document.getElementById('stokSonucAlani');
-        if (stokSonuc) {
-            stokSonuc.innerHTML = html;
-            stokSonuc.style.display = 'block';
-        }
-    }
-
-    // Geriye dönük uyumluluk için alias
-    function stokHesapla() { stokGoster(); }
-
-    // ─── SAĞLIK TAKİBİ ───────────────────────────────────────────────────────
-    function saglikPatokGuncelle() {
-        let select = document.getElementById('saglikPatokSec');
-        if (!select) return;
-        select.innerHTML = '';
-        for (let i = 1; i <= patokSayisi; i++) {
-            let option = document.createElement('option');
-            option.value = String(i);
-            option.text = 'Patok ' + i;
-            select.appendChild(option);
-        }
-    }
-
-    function saglikKaydet() {
-        let pNo = document.getElementById('saglikPatokSec').value;
-        let tarih = document.getElementById('saglikTarih').value;
-        let ilac = document.getElementById('saglikIlac').value.trim();
-        let doz = document.getElementById('saglikDoz').value.trim() || '-';
-
-        if (!tarih || !ilac) { alert("Lütfen Tarih ve İlaç/Aşı Adı giriniz!"); return; }
-
-        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
-        kayitlar.push({ id: Date.now(), patok: String(pNo), tarih: tarih, ilac: ilac, doz: doz });
-        localStorage.setItem(APP_PREFIX + 'saglik', JSON.stringify(kayitlar));
-        
-        document.getElementById('saglikIlac').value = '';
-        document.getElementById('saglikDoz').value = '';
-        saglikListele();
-    }
-
-    function saglikListele() {
-        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
-        let gecmisDiv = document.getElementById('saglikGecmisi');
-        if (!gecmisDiv) return;
-
-        if (kayitlar.length === 0) {
-            gecmisDiv.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kayıtlı bir aşı/ilaç bulunmuyor.</p>';
-            return;
-        }
-
-        kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-
-        let html = `<table class="saglik-tablo"><tr><th>Patok</th><th>Tarih</th><th>İlaç/Aşı</th><th>Doz</th><th>İşlem</th></tr>`;
-        kayitlar.forEach(k => {
-            let trTarih = new Date(k.tarih).toLocaleDateString('tr-TR');
-            html += `<tr>
-                <td><strong>P-${escapeHTML(String(k.patok))}</strong></td>
-                <td>${escapeHTML(trTarih)}</td>
-                <td>${escapeHTML(k.ilac)}</td>
-                <td>${escapeHTML(k.doz)}</td>
-                <td><button class="btn-kucuk-sil" onclick="saglikSil(${Number(k.id)})">SİL</button></td>
-            </tr>`;
-        });
-        html += `</table>`;
-        gecmisDiv.innerHTML = html;
-    }
-
-    function saglikSil(id) {
-        if (!confirm("Bu sağlık kaydını silmek istediğinize emin misiniz?")) return;
-        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
-        kayitlar = kayitlar.filter(k => k.id !== id);
-        localStorage.setItem(APP_PREFIX + 'saglik', JSON.stringify(kayitlar));
-        saglikListele();
-    }
-
-    // ─── DAMIZLIK: İNEK ──────────────────────────────────────────────────────
-    function inekEkle() {
-        let kupe     = document.getElementById('inekKupe').value.trim();
-        let laktasyon = document.getElementById('inekLaktasyon').value;
-        let sut      = document.getElementById('inekSut').value || 0;
-        let durum    = document.getElementById('inekDurum').value;
-
-        if (!kupe) { alert("Sisteme kayıt için Küpe No veya İsim girmelisiniz!"); return; }
-
-        let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-        let varMi   = inekler.findIndex(i => i.kupe === kupe);
-        if (varMi > -1) {
-            inekler[varMi] = { kupe, laktasyon, sut: parseFloat(sut), durum };
-        } else {
-            inekler.push({ id: Date.now(), kupe, laktasyon, sut: parseFloat(sut), durum });
-        }
-
-        localStorage.setItem(APP_PREFIX + 'inekler', JSON.stringify(inekler));
-        document.getElementById('inekKupe').value     = '';
-        document.getElementById('inekLaktasyon').value = '';
-        document.getElementById('inekSut').value       = '';
-        inekListele();
-        tohumlamaInekDoldur();
-    }
-
-    function inekListele() {
-        let inekler    = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-        let listeAlan  = document.getElementById('inekListesiAlan');
-        let ozetAlan   = document.getElementById('sutOzetAlan');
-        
-        if (inekler.length === 0) {
-            listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Sürüde henüz kayıtlı hayvan bulunmuyor.</p>';
-            ozetAlan.style.display = 'none';
-            return;
-        }
-
-        let toplamSut = 0, sagmalSayisi = 0;
-
-        let html = `<table class="saglik-tablo" style="min-width: 500px;"><tr><th>Küpe / İsim</th><th>Laktasyon</th><th>Durum</th><th>Günlük Süt</th><th>İşlem</th></tr>`;
-        inekler.forEach(inek => {
-            if (inek.durum === 'Sağmal') { toplamSut += inek.sut; sagmalSayisi++; }
-            html += `<tr>
-                <td><strong>${escapeHTML(inek.kupe)}</strong></td>
-                <td>${escapeHTML(inek.laktasyon || '-')}</td>
-                <td>${escapeHTML(inek.durum)}</td>
-                <td><strong style="color:#27ae60;">${inek.durum === 'Sağmal' ? inek.sut + ' Lt' : '-'}</strong></td>
-                <td><button class="btn-kucuk-sil" onclick="inekSil('${escapeHTML(inek.kupe)}')">SİL</button></td>
-            </tr>`;
-        });
-        html += `</table>`;
-        listeAlan.innerHTML = html;
-
-        let ortalama = sagmalSayisi > 0 ? (toplamSut / sagmalSayisi).toFixed(1) : 0;
-        ozetAlan.innerHTML = `<strong>Sürü Süt Özeti:</strong> Toplam ${inekler.length} Baş Hayvan | Sağmal: ${sagmalSayisi} Baş <br> <strong>Toplam Günlük Süt: <span style="color:#27ae60; font-size:16px;">${toplamSut} Litre</span></strong> | İnek Başı Ort: ${ortalama} Lt`;
-        ozetAlan.style.display = 'block';
-    }
-
-    function inekSil(kupe) {
-        if (confirm(escapeHTML(kupe) + " numaralı hayvanı sürüden silmek istediğinize emin misiniz?")) {
-            let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-            inekler = inekler.filter(i => i.kupe !== kupe);
-            localStorage.setItem(APP_PREFIX + 'inekler', JSON.stringify(inekler));
-            inekListele();
-            tohumlamaInekDoldur();
-        }
-    }
-
-    // ─── DAMIZLIK: TOHUMLAMA ─────────────────────────────────────────────────
-    function tohumlamaInekDoldur() {
-        let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-        let select  = document.getElementById('tohumlamaInekSec');
-        if (!select) return;
-        select.innerHTML = '';
-        inekler.forEach(inek => {
-            let opt  = document.createElement('option');
-            opt.value = inek.kupe;
-            opt.text  = inek.kupe + (inek.durum === 'Sağmal' ? ' (Sağmal)' : ' (Kuru/Düve)');
-            select.appendChild(opt);
-        });
-    }
-
-    function tohumlamaEkle() {
-        let kupe   = document.getElementById('tohumlamaInekSec').value;
-        let tarih  = document.getElementById('tohumTarihi').value;
-        let sperma = document.getElementById('spermaKodu').value.trim();
-
-        if (!kupe || !tarih) { alert("Lütfen inek seçip tohumlama tarihini giriniz!"); return; }
-
-        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
-        kayitlar.push({ id: Date.now(), kupe, tarih, sperma });
-        localStorage.setItem(APP_PREFIX + 'tohumlama', JSON.stringify(kayitlar));
-        tohumlamaListele();
-    }
-
-    function tohumlamaListele() {
-        let kayitlar  = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
-        let listeAlan = document.getElementById('tohumlamaListesiAlan');
-        
-        if (kayitlar.length === 0) {
-            listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Kayıtlı tohumlama bulunmuyor.</p>';
-            return;
-        }
-
-        kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-
-        let html = `<table class="saglik-tablo" style="min-width: 600px;"><tr><th>Küpe</th><th>Tohumlama</th><th>Boğa Kodu</th><th>Tahmini Doğum</th><th>Durum / Kalan Süre</th><th>İşlem</th></tr>`;
-        
-        let bugun = new Date();
-        bugun.setHours(0,0,0,0);
-
-        kayitlar.forEach(k => {
-            let tTarih    = new Date(k.tarih);
-            let dogumTarih = new Date(tTarih);
-            dogumTarih.setDate(dogumTarih.getDate() + 283);
-            
-            let kalanGun     = Math.round((dogumTarih - bugun) / (1000 * 60 * 60 * 24));
-            let durumMetni   = "";
-            let bgRenk       = "";
-
-            if (kalanGun < 0) {
-                durumMetni = `<span style="color:#e74c3c; font-weight:bold;">Doğum Gerçekleşmiş Olmalı</span>`;
-            } else if (kalanGun <= 60) {
-                durumMetni = `<span style="color:#d35400; font-weight:bold;">Kuruya Çıkar! (Kalan: ${kalanGun} Gün)</span>`;
-                bgRenk = "background-color: #fdf2e9;";
-            } else {
-                durumMetni = `<span style="color:#2980b9;">Gebelik Devam (Kalan: ${kalanGun} Gün)</span>`;
-            }
-
-            html += `<tr style="${bgRenk}">
-                <td><strong>${escapeHTML(k.kupe)}</strong></td>
-                <td>${tTarih.toLocaleDateString('tr-TR')}</td>
-                <td>${escapeHTML(k.sperma || '-')}</td>
-                <td style="font-weight:bold; color:#8e44ad;">${dogumTarih.toLocaleDateString('tr-TR')}</td>
-                <td>${durumMetni}</td>
-                <td><button class="btn-kucuk-sil" onclick="tohumlamaSil(${Number(k.id)})">SİL</button></td>
-            </tr>`;
-        });
-        html += `</table>`;
-        listeAlan.innerHTML = html;
-    }
-    
-    function tohumlamaSil(id) {
-        if (confirm("Bu tohumlama kaydını silmek istediğinize emin misiniz?")) {
-            let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
-            kayitlar = kayitlar.filter(k => k.id !== id);
-            localStorage.setItem(APP_PREFIX + 'tohumlama', JSON.stringify(kayitlar));
-            tohumlamaListele();
-        }
-    }
+  const firebaseConfig = {
+    apiKey: "AIzaSyDUP-9lbbQ_J7n8Q6sMbiswzCOti1GPMCc",
+    authDomain: "yildizbesifatih.firebaseapp.com",
+    databaseURL: "https://yildizbesifatih-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "yildizbesifatih",
+    storageBucket: "yildizbesifatih.firebasestorage.app",
+    messagingSenderId: "873010077952",
+    appId: "1:873010077952:web:8e114e35138b5879f753e5",
+    measurementId: "G-EHTBN7VKQY"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const database = firebase.database();
 </script>
+
+<script src="script.js"></script>
+
 </body>
 </html>
