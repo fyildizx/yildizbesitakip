@@ -1,3 +1,1 @@
-self.addEventListener('fetch', (event) => {
-  // Bu kod uygulamanın çevrimdışı çalışmasını sağlar
-});
+const CACHE_NAME = 'yildiz-ciftlik-v1'; const CACHE_FILES = [ 'index.html', 'script.js', 'style.css', 'manifest.json' ]; self.addEventListener('install', (event) => { event.waitUntil( caches.open(CACHE_NAME).then((cache) => cache.addAll(CACHE_FILES)) ); self.skipWaiting(); }); self.addEventListener('activate', (event) => { event.waitUntil( caches.keys().then((keys) => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))) ) ); self.clients.claim(); }); self.addEventListener('fetch', (event) => { if (event.request.method !== 'GET') return; // Firebase ve CDN isteklerini cache'leme const url = event.request.url; if (url.includes('firebaseio.com') || url.includes('googleapis.com') || url.includes('gstatic.com')) { return; } event.respondWith( caches.match(event.request).then((cached) => cached || fetch(event.request)) ); });

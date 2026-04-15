@@ -6,7 +6,7 @@ function googleIleGiris() {
             console.log("Google ile giriş başarılı!");
         })
         .catch((error) => {
-            document.getElementById('auth-hata').innerText = "Hata: " + error.message;
+            document.getElementById('auth-hata').innerText = "Hata: " + firebaseHataCevir(error.code);
         });
 }
 const auth = firebase.auth();
@@ -16,22 +16,41 @@ let mevcutKullanici = null;
 function girisYap() {
     const email = document.getElementById('auth-email').value;
     const sifre = document.getElementById('auth-sifre').value;
+    if (!email || !sifre) { document.getElementById('auth-hata').innerText = "E-posta ve şifre boş bırakılamaz!"; return; }
     auth.signInWithEmailAndPassword(email, sifre)
-        .catch(error => { document.getElementById('auth-hata').innerText = "Hata: " + error.message; });
+        .catch(error => { document.getElementById('auth-hata').innerText = "Hata: " + firebaseHataCevir(error.code); });
 }
 
 // KAYIT OLMA FONKSİYONU
 function kayitOl() {
     const email = document.getElementById('auth-email').value;
     const sifre = document.getElementById('auth-sifre').value;
+    if (!email || !sifre) { document.getElementById('auth-hata').innerText = "E-posta ve şifre boş bırakılamaz!"; return; }
+    if (sifre.length < 6) { document.getElementById('auth-hata').innerText = "Şifre en az 6 karakter olmalıdır!"; return; }
     auth.createUserWithEmailAndPassword(email, sifre)
         .then(() => alert("Kayıt başarılı! Giriş yapılıyor..."))
-        .catch(error => { document.getElementById('auth-hata').innerText = "Hata: " + error.message; });
+        .catch(error => { document.getElementById('auth-hata').innerText = "Hata: " + firebaseHataCevir(error.code); });
 }
 
 // ÇIKIŞ YAPMA FONKSİYONU
 function cikisYap() {
     auth.signOut().then(() => location.reload());
+}
+
+// FİREBASE HATA KODLARINI TÜRKÇE'YE ÇEVİR
+function firebaseHataCevir(kod) {
+    const hatalar = {
+        'auth/user-not-found':      'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.',
+        'auth/wrong-password':      'Şifre hatalı. Lütfen tekrar deneyin.',
+        'auth/invalid-email':       'Geçersiz e-posta adresi.',
+        'auth/email-already-in-use':'Bu e-posta adresi zaten kullanımda.',
+        'auth/weak-password':       'Şifre çok zayıf. En az 6 karakter kullanın.',
+        'auth/too-many-requests':   'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.',
+        'auth/network-request-failed': 'Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.',
+        'auth/popup-closed-by-user':'Google giriş penceresi kapatıldı.',
+        'auth/invalid-credential':  'E-posta veya şifre hatalı.',
+    };
+    return hatalar[kod] || ('Bilinmeyen hata: ' + kod);
 }
 
 // OTURUM DURUMUNU İZLE (Kritik Kısım)
@@ -56,7 +75,34 @@ function verileriBulutaYedekle() {
         const k = localStorage.key(i);
         data[k] = localStorage.getItem(k);
     }
-    database.ref('users/' + mevcutKullanici.uid + '/' + aktifIsletmeId).set(data);
+    database.ref('users/' + mevcutKullanici.uid + '/' + aktifIsletmeId).set(data)
+        .then(() => console.log('Bulut yedeği alındı.'))
+        .catch(err => console.error('Bulut yedek hatası:', err));
+}
+
+// FIX: Eksik olan verileriBuluttanCek fonksiyonu eklendi
+function verileriBuluttanCek(uid) {
+    // İşletme listesini ve aktif işletme id'sini önce yerel olarak yükle
+    // Ardından Firebase'den mevcut aktif işletmenin verisini çek
+    let aktifId = localStorage.getItem('aktifIsletmeId') || '1';
+    database.ref('users/' + uid + '/' + aktifId).once('value')
+        .then((snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Sunucudan gelen veriyi localStorage'a yaz (sadece bu işletmenin anahtarları)
+                Object.keys(data).forEach(key => {
+                    localStorage.setItem(key, data[key]);
+                });
+                console.log('Buluttan veri başarıyla yüklendi.');
+                // Sayfayı yeniden yükle ki veriler arayüze yansısın
+                location.reload();
+            } else {
+                console.log('Bulutta bu işletme için veri bulunamadı, yerel veri kullanılıyor.');
+            }
+        })
+        .catch(err => {
+            console.error('Buluttan veri çekme hatası:', err);
+        });
 }
 // ─── YARDIMCI FONKSİYONLAR ───────────────────────────────────────────────
 function escapeHTML(str) {
@@ -932,26 +978,36 @@ function inekListele() {
     let toplamSut = 0, sagmalSayisi = 0;
 
     let html = `<table class="saglik-tablo" style="min-width: 500px;"><tr><th>Küpe / İsim</th><th>Laktasyon</th><th>Durum</th><th>Günlük Süt</th><th>İşlem</th></tr>`;
-    inekler.forEach(inek => {
+    inekler.forEach((inek, idx) => {
         if (inek.durum === 'Sağmal') { toplamSut += inek.sut; sagmalSayisi++; }
+        // FIX: onclick içine string enjeksiyonu yerine data-attribute + event delegation
         html += `<tr>
             <td><strong>${escapeHTML(inek.kupe)}</strong></td>
             <td>${escapeHTML(inek.laktasyon || '-')}</td>
             <td>${escapeHTML(inek.durum)}</td>
-            <td><strong style="color:#27ae60;">${inek.durum === 'Sağmal' ? inek.sut + ' Lt' : '-'}</strong></td>
-            <td><button class="btn-kucuk-sil" onclick="inekSil('${escapeHTML(inek.kupe)}')">SİL</button></td>
+            <td><strong style="color:#27ae60;">${inek.durum === 'Sağmal' ? escapeHTML(String(inek.sut)) + ' Lt' : '-'}</strong></td>
+            <td><button class="btn-kucuk-sil inek-sil-btn" data-kupe="${escapeHTML(inek.kupe)}">SİL</button></td>
         </tr>`;
     });
     html += `</table>`;
     listeAlan.innerHTML = html;
 
+    // FIX: Event delegation ile XSS-safe silme
+    listeAlan.querySelectorAll('.inek-sil-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            inekSil(this.dataset.kupe);
+        });
+    });
+
+    // Erken return - aşağıda tekrar innerHTML atanmasın
     let ortalama = sagmalSayisi > 0 ? (toplamSut / sagmalSayisi).toFixed(1) : 0;
     ozetAlan.innerHTML = `<strong>Sürü Süt Özeti:</strong> Toplam ${inekler.length} Baş Hayvan | Sağmal: ${sagmalSayisi} Baş <br> <strong>Toplam Günlük Süt: <span style="color:#27ae60; font-size:16px;">${toplamSut} Litre</span></strong> | İnek Başı Ort: ${ortalama} Lt`;
     ozetAlan.style.display = 'block';
+    return;
 }
 
 function inekSil(kupe) {
-    if (confirm(escapeHTML(kupe) + " numaralı hayvanı sürüden silmek istediğinize emin misiniz?")) {
+    if (confirm(kupe + " numaralı hayvanı sürüden silmek istediğinize emin misiniz?")) {
         let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
         inekler = inekler.filter(i => i.kupe !== kupe);
         localStorage.setItem(APP_PREFIX + 'inekler', JSON.stringify(inekler));

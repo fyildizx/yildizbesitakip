@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yıldız Çiftlik Yönetim Sistemi</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -231,6 +233,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
+  // ÖNEMLİ GÜVENLİK NOTU: Firebase Console'dan bu API key için
+  // "Application restrictions" altında domain kısıtlaması ekleyin.
+  // (Firebase Console > Project Settings > API key > HTTP referrers)
   const firebaseConfig = {
     apiKey: "AIzaSyDUP-9lbbQ_J7n8Q6sMbiswzCOti1GPMCc",
     authDomain: "yildizbesifatih.firebaseapp.com",
@@ -246,6 +251,17 @@
 </script>
 
 <script src="script.js"></script>
+
+<script>
+  // PWA: Service Worker Kaydı
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker kayıt başarılı:', reg.scope))
+        .catch(err => console.warn('Service Worker kayıt hatası:', err));
+    });
+  }
+</script>
 
 </body>
 </html>
