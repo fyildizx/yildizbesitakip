@@ -1042,34 +1042,3 @@ function tohumlamaSil(id) {
         tohumlamaListele();
     }
 }
-// 1. SEKMELER ARASI GEÇİŞ YAPMA
-function sekmeAc(sekmeAdi) {
-    // Tüm sekmeleri gizle
-    const sekmeler = document.getElementsByClassName("tab-content");
-    for (let s of sekmeler) {
-        s.style.display = "none";
-    }
-    // Seçilen sekmeyi göster
-    document.getElementById(sekmeAdi).style.display = "block";
-}
-
-// 2. GİDER KAYDETME (FİREBASE)
-async function giderKaydet() {
-    const data = {
-        kategori: document.getElementById('gider-kategori').value,
-        ad: document.getElementById('gider-ad').value,
-        miktar: parseFloat(document.getElementById('gider-miktar').value),
-        fiyat: parseFloat(document.getElementById('gider-birim-fiyat').value),
-        tarih: document.getElementById('gider-tarih').value,
-        toplam: parseFloat(document.getElementById('gider-miktar').value) * parseFloat(document.getElementById('gider-birim-fiyat').value),
-        uid: auth.currentUser.uid,
-        zaman: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    try {
-        await db.collection("ciftlik_giderleri").add(data);
-        alert("Gider başarıyla bağımsız bölüme kaydedildi kanka!");
-        // Temizlik...
-        document.getElementById('gider-ad').value = "";
-    } catch(e) { alert("Hata: " + e.message); }
-}
