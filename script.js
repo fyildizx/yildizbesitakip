@@ -40,34 +40,39 @@ function cikisYap() {
 // FİREBASE HATA KODLARINI TÜRKÇE'YE ÇEVİR
 function firebaseHataCevir(kod) {
     const hatalar = {
-        'auth/user-not-found':      'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.',
-        'auth/wrong-password':      'Şifre hatalı. Lütfen tekrar deneyin.',
-        'auth/invalid-email':       'Geçersiz e-posta adresi.',
-        'auth/email-already-in-use':'Bu e-posta adresi zaten kullanımda.',
-        'auth/weak-password':       'Şifre çok zayıf. En az 6 karakter kullanın.',
-        'auth/too-many-requests':   'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.',
+        'auth/user-not-found':         'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.',
+        'auth/wrong-password':         'Şifre hatalı. Lütfen tekrar deneyin.',
+        'auth/invalid-email':          'Geçersiz e-posta adresi.',
+        'auth/email-already-in-use':   'Bu e-posta adresi zaten kullanımda.',
+        'auth/weak-password':          'Şifre çok zayıf. En az 6 karakter kullanın.',
+        'auth/too-many-requests':      'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.',
         'auth/network-request-failed': 'Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.',
-        'auth/popup-closed-by-user':'Google giriş penceresi kapatıldı.',
-        'auth/invalid-credential':  'E-posta veya şifre hatalı.',
+        'auth/popup-closed-by-user':   'Google giriş penceresi kapatıldı.',
+        'auth/invalid-credential':     'E-posta veya şifre hatalı.',
     };
     return hatalar[kod] || ('Bilinmeyen hata: ' + kod);
 }
 
-// OTURUM DURUMUNU İZLE (Kritik Kısım)
+// OTURUM DURUMUNU İZLE
 auth.onAuthStateChanged((user) => {
     if (user) {
         mevcutKullanici = user;
         document.getElementById('auth-ekrani').style.display = 'none';
         document.getElementById('ana-uygulama').style.display = 'block';
-        // Verileri kullanıcıya özel klasörden çek (uid: kullanıcıya özel kimlik)
-        verileriBuluttanCek(user.uid);
+
+        // FIX: Sonsuz reload önleme — sadece ilk girişte buluttan çek
+        if (!sessionStorage.getItem('bulutVerisiYuklendi')) {
+            verileriBuluttanCek(user.uid);
+        } else {
+            uygulamaBaslat();
+        }
     } else {
         document.getElementById('auth-ekrani').style.display = 'flex';
         document.getElementById('ana-uygulama').style.display = 'none';
     }
 });
 
-// Veri Yedekleme Fonksiyonunu Güncelle (Artık Kullanıcı ID'si ile kaydedecek)
+// Bulut yedekleme
 function verileriBulutaYedekle() {
     if (!mevcutKullanici) return;
     const data = {};
@@ -80,39 +85,46 @@ function verileriBulutaYedekle() {
         .catch(err => console.error('Bulut yedek hatası:', err));
 }
 
-// FIX: Eksik olan verileriBuluttanCek fonksiyonu eklendi
+// FIX: Sonsuz reload önlendi — sessionStorage flag kullanılıyor
 function verileriBuluttanCek(uid) {
-    // İşletme listesini ve aktif işletme id'sini önce yerel olarak yükle
-    // Ardından Firebase'den mevcut aktif işletmenin verisini çek
     let aktifId = localStorage.getItem('aktifIsletmeId') || '1';
     database.ref('users/' + uid + '/' + aktifId).once('value')
         .then((snapshot) => {
             const data = snapshot.val();
             if (data) {
-                // Sunucudan gelen veriyi localStorage'a yaz (sadece bu işletmenin anahtarları)
+                // FIX: Sadece beklenen prefix/key'leri yaz, bilinmeyen key'leri atla
+                const izinliPrefixler = ['isletme_', 'aktifIsletmeId', 'isletmeListesi', 'favoriIsletmeId'];
                 Object.keys(data).forEach(key => {
-                    localStorage.setItem(key, data[key]);
+                    const izinli = izinliPrefixler.some(prefix => key.startsWith(prefix));
+                    if (izinli) {
+                        localStorage.setItem(key, data[key]);
+                    }
                 });
                 console.log('Buluttan veri başarıyla yüklendi.');
-                // Sayfayı yeniden yükle ki veriler arayüze yansısın
-                location.reload();
             } else {
                 console.log('Bulutta bu işletme için veri bulunamadı, yerel veri kullanılıyor.');
             }
+            // FIX: Flag set edildikten SONRA reload — böylece tekrar buraya gelmez
+            sessionStorage.setItem('bulutVerisiYuklendi', '1');
+            location.reload();
         })
         .catch(err => {
             console.error('Buluttan veri çekme hatası:', err);
+            // Hata olsa bile uygulamayı başlat
+            sessionStorage.setItem('bulutVerisiYuklendi', '1');
+            uygulamaBaslat();
         });
 }
+
 // ─── YARDIMCI FONKSİYONLAR ───────────────────────────────────────────────
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
     return String(str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+        .replace(/&/g,  "&amp;")
+        .replace(/</g,  "&lt;")
+        .replace(/>/g,  "&gt;")
+        .replace(/"/g,  "&quot;")
+        .replace(/'/g,  "&#39;");
 }
 
 // ─── İŞLETME YÖNETİMİ ───────────────────────────────────────────────────
@@ -137,13 +149,13 @@ if (!aktifIsletme) {
 let APP_PREFIX = 'isletme_' + aktifIsletmeId + '_';
 let patokSayisi = 1;
 
-// Tüm kayıt edilecek alan ID listesi (hem rasyon hem finans)
-const KAYIT_ALANLARI = [
-    'fiyatArpa','arpaTorbaKg','fiyatMisir','fiyatYem','fiyatSoya','fiyatSaman','guncelEtFiyati'
-];
-const PATOK_ALANLARI = ['sayi','kg','hedef','artis','yemProtein','yemEnerji','arpa','misir','yem','soya','saman','alisFiyati','alisKg','alisTarihi','karkasRandiman','fire','aylikArtis'];
-const STOK_ALANLARI  = ['stokArpa','stokMisir','stokYem','stokSoya','stokSaman'];
+const KAYIT_ALANLARI  = ['fiyatArpa','arpaTorbaKg','fiyatMisir','fiyatYem','fiyatSoya','fiyatSaman','guncelEtFiyati'];
+const PATOK_ALANLARI  = ['sayi','kg','hedef','artis','yemProtein','yemEnerji','arpa','misir','yem','soya','saman','alisFiyati','alisKg','alisTarihi','karkasRandiman','fire','aylikArtis'];
+const STOK_ALANLARI   = ['stokArpa','stokMisir','stokYem','stokSoya','stokSaman'];
 const ATLANACAK_ALANLAR = ['saglikTarih','saglikIlac','saglikDoz','saglikPatokSec','inekKupe','inekLaktasyon','inekSut','inekDurum','tohumTarihi','spermaKodu','tohumlamaInekSec'];
+
+// FIX: İzin verilen localStorage key'leri — yedek yükleme validasyonu için
+const IZINLI_KEY_PREFIXLER = ['isletme_', 'aktifIsletmeId', 'isletmeListesi', 'favoriIsletmeId'];
 
 function isletmeDropdownDoldur() {
     let select = document.getElementById('isletmeSecici');
@@ -206,10 +218,10 @@ function yedekAl() {
     });
     let json = JSON.stringify(yedekVerisi, null, 2);
     let blob = new Blob([json], {type: 'application/json'});
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement('a');
+    let url  = URL.createObjectURL(blob);
+    let a    = document.createElement('a');
     let tarih = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
-    a.href = url;
+    a.href     = url;
     a.download = 'yildiz_ciftlik_yedek_' + tarih + '.json';
     a.click();
     URL.revokeObjectURL(url);
@@ -226,10 +238,29 @@ function yedekYukle(event) {
     reader.onload = function(e) {
         try {
             let veri = JSON.parse(e.target.result);
+
+            // FIX: Sadece beklenen prefix'lere sahip key'leri kabul et
+            let yazilan = 0;
+            let atlanan = 0;
             Object.keys(veri).forEach(key => {
-                localStorage.setItem(key, veri[key]);
+                const izinli = IZINLI_KEY_PREFIXLER.some(prefix => key.startsWith(prefix));
+                if (izinli) {
+                    // FIX: Değer string olmalı (localStorage string'dir)
+                    if (typeof veri[key] === 'string') {
+                        localStorage.setItem(key, veri[key]);
+                        yazilan++;
+                    }
+                } else {
+                    atlanan++;
+                }
             });
-            alert("Yedek başarıyla yüklendi! Sayfa yenileniyor...");
+
+            if (yazilan === 0) {
+                alert("Hata: Bu dosya geçerli bir Yıldız Çiftlik yedeği değil!");
+                return;
+            }
+
+            alert("Yedek başarıyla yüklendi! (" + yazilan + " kayıt)" + (atlanan > 0 ? "\n(" + atlanan + " bilinmeyen kayıt atlandı)" : "") + "\nSayfa yenileniyor...");
             location.reload();
         } catch(err) {
             alert("Hata: Geçersiz yedek dosyası! (" + err.message + ")");
@@ -273,7 +304,6 @@ document.addEventListener('input', function(e) {
     if (hedef.tagName.toLowerCase() === 'input' || hedef.tagName.toLowerCase() === 'select') {
         if (!ATLANACAK_ALANLAR.includes(hedef.id)) {
             hesapla();
-            // Stok sekmesi açıksa stok hesabını da güncelle (stokTarih'e dokunmadan)
             let stokSekme = document.getElementById('stokSekmesi');
             if (stokSekme && stokSekme.classList.contains('aktif-sekme')) {
                 stokGoster();
@@ -284,6 +314,14 @@ document.addEventListener('input', function(e) {
 
 // ─── SAYFA YÜKLENME ───────────────────────────────────────────────────────
 window.onload = function() {
+    // sessionStorage flag varsa uygulama zaten başlatılmış demektir
+    if (sessionStorage.getItem('bulutVerisiYuklendi')) {
+        uygulamaBaslat();
+    }
+    // Aksi hâlde onAuthStateChanged -> verileriBuluttanCek -> reload -> uygulamaBaslat akışı işler
+};
+
+function uygulamaBaslat() {
     isletmeDropdownDoldur();
 
     let sonModul = localStorage.getItem('sonKullanilanModul') || 'besiModulu';
@@ -299,7 +337,7 @@ window.onload = function() {
         }
     }
 
-    // Sabit alanları yükle (fiyatlar + et fiyatı)
+    // Sabit alanları yükle
     KAYIT_ALANLARI.forEach(id => {
         let el = document.getElementById(id);
         if (!el) return;
@@ -307,7 +345,7 @@ window.onload = function() {
         if (val !== null) el.value = val;
     });
 
-    // Patok alanlarını yükle (rasyon + finans birlikte)
+    // Patok alanlarını yükle
     for (let i = 1; i <= patokSayisi; i++) {
         PATOK_ALANLARI.forEach(alan => {
             let el = document.getElementById('p' + i + '_' + alan);
@@ -330,7 +368,6 @@ window.onload = function() {
     let saglikTarihi = document.getElementById('saglikTarih');
     if (saglikTarihi) saglikTarihi.value = bugunFormat;
 
-    // FIX: otomatik stok düşme ÖNCE çalışır, stokHesapla SONRA
     stokOtomatikDus();
     hesapla();
     stokGoster();
@@ -339,7 +376,7 @@ window.onload = function() {
     inekListele();
     tohumlamaInekDoldur();
     tohumlamaListele();
-};
+}
 
 // ─── VERİ KAYIT YARDIMCISI ───────────────────────────────────────────────
 function tumAlanlarıKaydet() {
@@ -355,18 +392,18 @@ function tumAlanlarıKaydet() {
     }
 }
 
-// ─── OTOMATIK STOK DÜŞME ─────────────────────────────────────────────────
-// FIX: Bu fonksiyon stokTarih'i yazar. stokHesapla/stokGoster asla yazmaz.
+// ─── OTOMATİK STOK DÜŞME ─────────────────────────────────────────────────
 function stokOtomatikDus() {
     let bugun = new Date();
     bugun.setHours(0, 0, 0, 0);
     let bugunTarih = bugun.getTime();
-    let sonTarih = localStorage.getItem(APP_PREFIX + 'stokTarih');
+    let sonTarih   = localStorage.getItem(APP_PREFIX + 'stokTarih');
 
     if (sonTarih) {
         sonTarih = parseInt(sonTarih);
         if (bugunTarih > sonTarih) {
-            let gunFarki = Math.round((bugunTarih - sonTarih) / (1000 * 60 * 60 * 24));
+            // FIX: Math.floor kullan — yaz saati geçişlerinde Math.round hata yaratabilir
+            let gunFarki = Math.floor((bugunTarih - sonTarih) / (1000 * 60 * 60 * 24));
 
             let gArpa  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_arpa'))  || 0;
             let gMisir = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_misir')) || 0;
@@ -406,7 +443,7 @@ function stokOtomatikDus() {
             // Patok ağırlıklarını güncelle
             let pSayisi = parseInt(localStorage.getItem(APP_PREFIX + 'patokSayisi')) || 1;
             for (let i = 1; i <= pSayisi; i++) {
-                let mevcutKg = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_kg')) || 0;
+                let mevcutKg   = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_kg'))    || 0;
                 let patokArtis = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_artis')) || 1.35;
                 if (mevcutKg > 0) {
                     let yeniKg = mevcutKg + (patokArtis * gunFarki);
@@ -417,14 +454,13 @@ function stokOtomatikDus() {
             }
         }
     }
-    // FIX: stokTarih SADECE burada güncellenir
     localStorage.setItem(APP_PREFIX + 'stokTarih', bugunTarih);
 }
 
 // ─── PATOK EKLE / SİL ────────────────────────────────────────────────────
 function patokEkle(kaydet = true) {
     patokSayisi++;
-    
+
     let rContainer = document.getElementById('patoklar');
     let yPatok = document.createElement('div');
     yPatok.className = 'patok-card';
@@ -484,7 +520,7 @@ function patokSil() {
 
     let silId = prompt("Kaç numaralı patoku silmek istiyorsun? (Mevcut Patoklar: 1 ile " + patokSayisi + " arası)");
     if (!silId) return;
-    
+
     silId = parseInt(silId);
     if (isNaN(silId) || silId < 1 || silId > patokSayisi) {
         alert("Hatalı bir patok numarası girdin!");
@@ -505,11 +541,18 @@ function patokSil() {
             }
         });
     }
-    
+
     // Son patok verisini temizle
     PATOK_ALANLARI.forEach(alan => {
         localStorage.removeItem(APP_PREFIX + 'p' + patokSayisi + '_' + alan);
     });
+
+    // FIX: Tüketim ve tuketim_* anahtarları da temizlendi
+    localStorage.removeItem(APP_PREFIX + 'tuketim_arpa');
+    localStorage.removeItem(APP_PREFIX + 'tuketim_misir');
+    localStorage.removeItem(APP_PREFIX + 'tuketim_yem');
+    localStorage.removeItem(APP_PREFIX + 'tuketim_soya');
+    localStorage.removeItem(APP_PREFIX + 'tuketim_saman');
 
     // Sağlık kayıtlarını güncelle
     let saglikKayitlari = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
@@ -517,7 +560,7 @@ function patokSil() {
     saglikKayitlari.forEach(k => {
         let pNo = parseInt(k.patok);
         if (pNo === silId) {
-            // Silinen - ekleme
+            // Silindi — ekleme
         } else if (pNo > silId) {
             k.patok = String(pNo - 1);
             yeniSaglik.push(k);
@@ -529,7 +572,7 @@ function patokSil() {
 
     patokSayisi--;
     localStorage.setItem(APP_PREFIX + 'patokSayisi', patokSayisi);
-    
+
     alert("Patok başarıyla silindi ve sıralama güncellendi!");
     location.reload();
 }
@@ -543,7 +586,7 @@ function hesapla() {
     let fMisir      = fMisirTorba / 40;
     let fYemTorba   = parseFloat(document.getElementById('fiyatYem').value)   || 0;
     let fYem        = fYemTorba / 50;
-    
+
     let hpArpa  = 11,   meArpa  = 2.8;
     let hpMisir = 8.5,  meMisir = 3.1;
     let hpSoya  = 44,   meSoya  = 2.8;
@@ -560,10 +603,10 @@ function hesapla() {
         let ckg    = parseFloat(document.getElementById('p' + i + '_kg').value)     || 0;
         let hkg    = parseFloat(document.getElementById('p' + i + '_hedef').value)  || 0;
         let artis  = parseFloat(document.getElementById('p' + i + '_artis').value)  || 1.35;
-        
+
         let yemProtein = parseFloat(document.getElementById('p' + i + '_yemProtein').value) || 14;
         let meYem      = parseFloat(document.getElementById('p' + i + '_yemEnerji').value)  || 2.6;
-        
+
         let alisTarihi  = document.getElementById('p' + i + '_alisTarihi').value;
         let alisFiyati  = parseFloat(document.getElementById('p' + i + '_alisFiyati').value) || 0;
         let alisKg      = parseFloat(document.getElementById('p' + i + '_alisKg').value)     || 0;
@@ -591,14 +634,14 @@ function hesapla() {
         let soyaMaliyet  = sy_toplam * fSoya;
         let samanMaliyet = sm_toplam * fSaman;
         let pt_maliyet   = arpaMaliyet + misirMaliyet + yemMaliyet + soyaMaliyet + samanMaliyet;
-        
+
         genelArpaGider  += arpaMaliyet;
         genelMisirGider += misirMaliyet;
         genelYemGider   += yemMaliyet;
         genelSoyaGider  += soyaMaliyet;
         genelSamanGider += samanMaliyet;
         genelGider      += pt_maliyet;
-        
+
         let hb_maliyet = 0, a_hb = 0, m_hb = 0, y_hb = 0, sy_hb = 0, kesifKilo_hb = 0;
         let rasyonHP = 0, rasyonME = 0, oneriHP = 0, oneriME = 0;
         let kesimMetni = "";
@@ -610,7 +653,7 @@ function hesapla() {
             d1.setHours(0,0,0,0); d2.setHours(0,0,0,0);
             if (d2 >= d1) iceridekiGun = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
         }
-        
+
         if (s > 0) {
             hb_maliyet   = pt_maliyet / s;
             a_hb         = a_toplam  / s;
@@ -618,17 +661,17 @@ function hesapla() {
             y_hb         = y_toplam  / s;
             sy_hb        = sy_toplam / s;
             kesifKilo_hb = a_hb + m_hb + y_hb + sy_hb;
-            
+
             if (kesifKilo_hb > 0) {
                 rasyonHP = ((a_hb * hpArpa) + (m_hb * hpMisir) + (y_hb * yemProtein) + (sy_hb * hpSoya)) / kesifKilo_hb;
                 rasyonME = ((a_hb * meArpa) + (m_hb * meMisir) + (y_hb * meYem)       + (sy_hb * meSoya)) / kesifKilo_hb;
             }
 
             if (ckg > 0) {
-                if (ckg < 250)       { oneriHP = 15.0; oneriME = 2.60; }
-                else if (ckg < 350)  { oneriHP = 14.0; oneriME = 2.70; }
-                else if (ckg < 450)  { oneriHP = 13.0; oneriME = 2.80; }
-                else                 { oneriHP = 12.0; oneriME = 2.90; }
+                if      (ckg < 250) { oneriHP = 15.0; oneriME = 2.60; }
+                else if (ckg < 350) { oneriHP = 14.0; oneriME = 2.70; }
+                else if (ckg < 450) { oneriHP = 13.0; oneriME = 2.80; }
+                else                { oneriHP = 12.0; oneriME = 2.90; }
             }
 
             if (ckg > 0 && hkg > 0) {
@@ -646,7 +689,7 @@ function hesapla() {
         }
 
         let oneriMetni = ckg > 0 ? `<div class="oneri-kutu">Hedef (Önerilen) ➔ HP: %${oneriHP.toFixed(1)} | ME: ${oneriME.toFixed(2)} Mcal</div>` : "";
-        
+
         let patokSonucDiv = document.getElementById('sonuc_p' + i);
         if (patokSonucDiv) {
             if (s > 0 || pt_maliyet > 0) {
@@ -681,33 +724,33 @@ function hesapla() {
                     tuketimKatsayisi = ortalamaKg / ckg;
                 }
 
-                let yagliKarkasKg    = ckg * (karkasRandiman / 100);
-                let fireKg           = yagliKarkasKg * (fireOrani / 100);
-                let netEtKg          = yagliKarkasKg - fireKg;
-                
-                let brutDeger        = yagliKarkasKg * etFiyati;
-                let fireKesintiTL    = fireKg * etFiyati;
-                let netSatisDegeri   = brutDeger - fireKesintiTL;
+                let yagliKarkasKg  = ckg * (karkasRandiman / 100);
+                let fireKg         = yagliKarkasKg * (fireOrani / 100);
+                let netEtKg        = yagliKarkasKg - fireKg;
 
-                let toplamKesintiOrani    = fireOrani;
+                let brutDeger       = yagliKarkasKg * etFiyati;
+                let fireKesintiTL   = fireKg * etFiyati;
+                let netSatisDegeri  = brutDeger - fireKesintiTL;
+
+                let toplamKesintiOrani      = fireOrani;
                 let gunlukYagliKarkasArtisi = finansGunlukArtis * (karkasRandiman / 100);
                 let gunlukNetKarkasArtisi   = gunlukYagliKarkasArtisi * (1 - (toplamKesintiOrani / 100));
-                
+
                 let birimKarkasMaliyet = (gunlukNetKarkasArtisi > 0) ? (hb_maliyet / gunlukNetKarkasArtisi) : 0;
-                
+
                 let ortalamaGecmisMaliyet = hb_maliyet * tuketimKatsayisi;
                 let toplamYedirilenYem    = iceridekiGun * ortalamaGecmisMaliyet;
                 let guncelMaliyet         = alisFiyati + toplamYedirilenYem;
-                
+
                 let tahminiKarZarar = netSatisDegeri - guncelMaliyet;
                 let karZararRenk    = tahminiKarZarar >= 0 ? "27ae60" : "e74c3c";
                 let karZararBg      = tahminiKarZarar >= 0 ? "e8f8f5" : "fdedec";
 
                 let alisKilosuMetni = alisKg > 0 ? `(İlk Alış: ${alisKg} kg)` : ``;
                 let beklenenCanliKgMetni = "";
-                
+
                 if (alisKg > 0 && iceridekiGun > 0) {
-                    let beklenenKg  = alisKg + (iceridekiGun * finansGunlukArtis);
+                    let beklenenKg   = alisKg + (iceridekiGun * finansGunlukArtis);
                     let aciklamaMetni = aylikArtisInput > 0 ? `Aylık ${aylikArtisInput} kg hedefine göre` : `Günlük ${artis} kg hedefine göre`;
                     beklenenCanliKgMetni = `<div style="margin-bottom: 5px;"><strong>Olması Gereken Canlı Kg:</strong> <span style="color:#2980b9; font-size:15px;">${beklenenKg.toFixed(1)} kg</span> <span style="font-size:11px; color:#7f8c8d;">(${aciklamaMetni})</span></div>`;
                 }
@@ -715,7 +758,7 @@ function hesapla() {
                 finansSonucDiv.innerHTML = `
                     <div style="margin-bottom: 5px;"><strong>İçerideki Süre:</strong> <span style="color:#8e44ad; font-size:15px;">${iceridekiGun} Gün</span></div>
                     ${beklenenCanliKgMetni}
-                    
+
                     <table style="width:100%; font-size:12px; border-collapse:collapse; margin-top:10px; margin-bottom:10px; background:#fff; border:1px solid #ddd; border-radius:5px; overflow:hidden;">
                         <tr style="background:#2c3e50; color:white;">
                             <th style="padding:6px; text-align:left;">Karkas Analizi</th>
@@ -738,12 +781,12 @@ function hesapla() {
                             <td style="padding:6px; text-align:right; font-weight:bold; color:#27ae60; font-size:13px;">${netSatisDegeri.toFixed(2)} ₺</td>
                         </tr>
                     </table>
-                    
+
                     <div style="margin-bottom: 5px; padding-top: 5px; border-top: 1px dashed #ccc;">
                         <strong>1 KG <span style="color:#c0392b;">NET YAĞSIZ ETİN</span> YEM MALİYETİ:</strong>
                         <span style="color:#c0392b; font-size:16px;">${birimKarkasMaliyet.toFixed(2)} TL</span>
                     </div>
-                    
+
                     <div class="tuketim-kutu">
                         <strong>Maliyet Tablosu (Hayvan Başı)</strong><br>
                         Alış Maliyeti: ${alisFiyati.toFixed(2)} TL <span style="font-size:11px; color:#7f8c8d;">${alisKilosuMetni}</span><br>
@@ -765,7 +808,6 @@ function hesapla() {
     let genelYemTorba   = genelYemKg   / 50;
     let genelMisirTorba = genelMisirKg / 40;
 
-    // Tüketim değerlerini kaydet (stokOtomatikDus için)
     localStorage.setItem(APP_PREFIX + 'tuketim_arpa',  genelArpaKg);
     localStorage.setItem(APP_PREFIX + 'tuketim_misir', genelMisirTorba);
     localStorage.setItem(APP_PREFIX + 'tuketim_yem',   genelYemTorba);
@@ -799,20 +841,17 @@ function hesapla() {
         genelAlan.style.display = 'none';
     }
 
-    // Tüm alanları kaydet
     tumAlanlarıKaydet();
 }
 
-// ─── STOK GÖSTER (stokTarih'e DOKUNMAZ) ─────────────────────────────────
-// FIX: stokHesapla → stokGoster olarak yeniden adlandırıldı.
-// stokTarih'i asla güncellemez; sadece okur ve gösterir.
+// ─── STOK GÖSTER ─────────────────────────────────────────────────────────
 function stokGoster() {
-    let sArpa    = parseFloat(document.getElementById('stokArpa').value)  || 0;
+    let sArpa     = parseFloat(document.getElementById('stokArpa').value)  || 0;
     let arpaBirim = document.getElementById('stokArpaBirim').value;
-    let sMisir   = parseFloat(document.getElementById('stokMisir').value) || 0;
-    let sYem     = parseFloat(document.getElementById('stokYem').value)   || 0;
-    let sSoya    = parseFloat(document.getElementById('stokSoya').value)  || 0;
-    let sSaman   = parseFloat(document.getElementById('stokSaman').value) || 0;
+    let sMisir    = parseFloat(document.getElementById('stokMisir').value) || 0;
+    let sYem      = parseFloat(document.getElementById('stokYem').value)   || 0;
+    let sSoya     = parseFloat(document.getElementById('stokSoya').value)  || 0;
+    let sSaman    = parseFloat(document.getElementById('stokSaman').value) || 0;
 
     let gArpa  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_arpa'))  || 0;
     let gMisir = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_misir')) || 0;
@@ -820,22 +859,21 @@ function stokGoster() {
     let gSoya  = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_soya'))  || 0;
     let gSaman = parseFloat(localStorage.getItem(APP_PREFIX + 'tuketim_saman')) || 0;
 
-    // Stok değerlerini kaydet (stokTarih'e dokunmadan)
-    localStorage.setItem(APP_PREFIX + 'stokArpa',   sArpa);
-    localStorage.setItem(APP_PREFIX + 'stokMisir',  sMisir);
-    localStorage.setItem(APP_PREFIX + 'stokYem',    sYem);
-    localStorage.setItem(APP_PREFIX + 'stokSoya',   sSoya);
-    localStorage.setItem(APP_PREFIX + 'stokSaman',  sSaman);
+    localStorage.setItem(APP_PREFIX + 'stokArpa',      sArpa);
+    localStorage.setItem(APP_PREFIX + 'stokMisir',     sMisir);
+    localStorage.setItem(APP_PREFIX + 'stokYem',       sYem);
+    localStorage.setItem(APP_PREFIX + 'stokSoya',      sSoya);
+    localStorage.setItem(APP_PREFIX + 'stokSaman',     sSaman);
     localStorage.setItem(APP_PREFIX + 'stokArpaBirim', arpaBirim);
 
-    let arpaTorbaKgVal  = parseFloat(document.getElementById('arpaTorbaKg').value) || 43;
-    let arpaKgOlarak = (arpaBirim === 'torba') ? (sArpa * arpaTorbaKgVal) : sArpa;
+    let arpaTorbaKgVal = parseFloat(document.getElementById('arpaTorbaKg').value) || 43;
+    let arpaKgOlarak   = (arpaBirim === 'torba') ? (sArpa * arpaTorbaKgVal) : sArpa;
 
     function bitisTarihiBul(stokMiktari, gunlukTuketim, isim) {
         let isimGuveli = escapeHTML(isim);
         if (stokMiktari <= 0) return `<div class="stok-kalem stok-kirmizi"><div><strong>${isimGuveli}</strong><br><span style="color:#e74c3c; font-size:12px;">Stokta hiç ürün yok!</span></div></div>`;
         if (gunlukTuketim <= 0) return `<div class="stok-kalem"><div><strong>${isimGuveli}</strong><br><span style="color:#7f8c8d; font-size:12px;">Rasyonda kullanılmıyor.</span></div></div>`;
-        
+
         let kalanGun = Math.floor(stokMiktari / gunlukTuketim);
         let tarih = new Date();
         tarih.setDate(tarih.getDate() + kalanGun);
@@ -871,7 +909,6 @@ function stokGoster() {
     }
 }
 
-// Geriye dönük uyumluluk için alias
 function stokHesapla() { stokGoster(); }
 
 // ─── SAĞLIK TAKİBİ ───────────────────────────────────────────────────────
@@ -882,30 +919,30 @@ function saglikPatokGuncelle() {
     for (let i = 1; i <= patokSayisi; i++) {
         let option = document.createElement('option');
         option.value = String(i);
-        option.text = 'Patok ' + i;
+        option.text  = 'Patok ' + i;
         select.appendChild(option);
     }
 }
 
 function saglikKaydet() {
-    let pNo = document.getElementById('saglikPatokSec').value;
+    let pNo   = document.getElementById('saglikPatokSec').value;
     let tarih = document.getElementById('saglikTarih').value;
-    let ilac = document.getElementById('saglikIlac').value.trim();
-    let doz = document.getElementById('saglikDoz').value.trim() || '-';
+    let ilac  = document.getElementById('saglikIlac').value.trim();
+    let doz   = document.getElementById('saglikDoz').value.trim() || '-';
 
     if (!tarih || !ilac) { alert("Lütfen Tarih ve İlaç/Aşı Adı giriniz!"); return; }
 
     let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
     kayitlar.push({ id: Date.now(), patok: String(pNo), tarih: tarih, ilac: ilac, doz: doz });
     localStorage.setItem(APP_PREFIX + 'saglik', JSON.stringify(kayitlar));
-    
+
     document.getElementById('saglikIlac').value = '';
-    document.getElementById('saglikDoz').value = '';
+    document.getElementById('saglikDoz').value  = '';
     saglikListele();
 }
 
 function saglikListele() {
-    let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
+    let kayitlar  = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
     let gecmisDiv = document.getElementById('saglikGecmisi');
     if (!gecmisDiv) return;
 
@@ -916,19 +953,31 @@ function saglikListele() {
 
     kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
 
-    let html = `<table class="saglik-tablo"><tr><th>Patok</th><th>Tarih</th><th>İlaç/Aşı</th><th>Doz</th><th>İşlem</th></tr>`;
+    let tablo = document.createElement('table');
+    tablo.className = 'saglik-tablo';
+    tablo.innerHTML = `<tr><th>Patok</th><th>Tarih</th><th>İlaç/Aşı</th><th>Doz</th><th>İşlem</th></tr>`;
+
     kayitlar.forEach(k => {
         let trTarih = new Date(k.tarih).toLocaleDateString('tr-TR');
-        html += `<tr>
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
             <td><strong>P-${escapeHTML(String(k.patok))}</strong></td>
             <td>${escapeHTML(trTarih)}</td>
             <td>${escapeHTML(k.ilac)}</td>
             <td>${escapeHTML(k.doz)}</td>
-            <td><button class="btn-kucuk-sil" onclick="saglikSil(${Number(k.id)})">SİL</button></td>
-        </tr>`;
+            <td></td>
+        `;
+        // FIX: Event delegation — inline onclick kaldırıldı
+        let silBtn = document.createElement('button');
+        silBtn.className = 'btn-kucuk-sil';
+        silBtn.textContent = 'SİL';
+        silBtn.addEventListener('click', function() { saglikSil(k.id); });
+        tr.querySelector('td:last-child').appendChild(silBtn);
+        tablo.appendChild(tr);
     });
-    html += `</table>`;
-    gecmisDiv.innerHTML = html;
+
+    gecmisDiv.innerHTML = '';
+    gecmisDiv.appendChild(tablo);
 }
 
 function saglikSil(id) {
@@ -941,10 +990,10 @@ function saglikSil(id) {
 
 // ─── DAMIZLIK: İNEK ──────────────────────────────────────────────────────
 function inekEkle() {
-    let kupe     = document.getElementById('inekKupe').value.trim();
+    let kupe      = document.getElementById('inekKupe').value.trim();
     let laktasyon = document.getElementById('inekLaktasyon').value;
-    let sut      = document.getElementById('inekSut').value || 0;
-    let durum    = document.getElementById('inekDurum').value;
+    let sut       = document.getElementById('inekSut').value || 0;
+    let durum     = document.getElementById('inekDurum').value;
 
     if (!kupe) { alert("Sisteme kayıt için Küpe No veya İsim girmelisiniz!"); return; }
 
@@ -957,7 +1006,7 @@ function inekEkle() {
     }
 
     localStorage.setItem(APP_PREFIX + 'inekler', JSON.stringify(inekler));
-    document.getElementById('inekKupe').value     = '';
+    document.getElementById('inekKupe').value      = '';
     document.getElementById('inekLaktasyon').value = '';
     document.getElementById('inekSut').value       = '';
     inekListele();
@@ -965,10 +1014,10 @@ function inekEkle() {
 }
 
 function inekListele() {
-    let inekler    = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-    let listeAlan  = document.getElementById('inekListesiAlan');
-    let ozetAlan   = document.getElementById('sutOzetAlan');
-    
+    let inekler   = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
+    let listeAlan = document.getElementById('inekListesiAlan');
+    let ozetAlan  = document.getElementById('sutOzetAlan');
+
     if (inekler.length === 0) {
         listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Sürüde henüz kayıtlı hayvan bulunmuyor.</p>';
         ozetAlan.style.display = 'none';
@@ -977,33 +1026,36 @@ function inekListele() {
 
     let toplamSut = 0, sagmalSayisi = 0;
 
-    let html = `<table class="saglik-tablo" style="min-width: 500px;"><tr><th>Küpe / İsim</th><th>Laktasyon</th><th>Durum</th><th>Günlük Süt</th><th>İşlem</th></tr>`;
-    inekler.forEach((inek, idx) => {
+    let tablo = document.createElement('table');
+    tablo.className = 'saglik-tablo';
+    tablo.style.minWidth = '500px';
+    tablo.innerHTML = `<tr><th>Küpe / İsim</th><th>Laktasyon</th><th>Durum</th><th>Günlük Süt</th><th>İşlem</th></tr>`;
+
+    inekler.forEach(inek => {
         if (inek.durum === 'Sağmal') { toplamSut += inek.sut; sagmalSayisi++; }
-        // FIX: onclick içine string enjeksiyonu yerine data-attribute + event delegation
-        html += `<tr>
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
             <td><strong>${escapeHTML(inek.kupe)}</strong></td>
             <td>${escapeHTML(inek.laktasyon || '-')}</td>
             <td>${escapeHTML(inek.durum)}</td>
             <td><strong style="color:#27ae60;">${inek.durum === 'Sağmal' ? escapeHTML(String(inek.sut)) + ' Lt' : '-'}</strong></td>
-            <td><button class="btn-kucuk-sil inek-sil-btn" data-kupe="${escapeHTML(inek.kupe)}">SİL</button></td>
-        </tr>`;
-    });
-    html += `</table>`;
-    listeAlan.innerHTML = html;
-
-    // FIX: Event delegation ile XSS-safe silme
-    listeAlan.querySelectorAll('.inek-sil-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            inekSil(this.dataset.kupe);
-        });
+            <td></td>
+        `;
+        // FIX: Event delegation — data-attribute ile XSS-safe silme
+        let silBtn = document.createElement('button');
+        silBtn.className = 'btn-kucuk-sil';
+        silBtn.textContent = 'SİL';
+        silBtn.addEventListener('click', function() { inekSil(inek.kupe); });
+        tr.querySelector('td:last-child').appendChild(silBtn);
+        tablo.appendChild(tr);
     });
 
-    // Erken return - aşağıda tekrar innerHTML atanmasın
+    listeAlan.innerHTML = '';
+    listeAlan.appendChild(tablo);
+
     let ortalama = sagmalSayisi > 0 ? (toplamSut / sagmalSayisi).toFixed(1) : 0;
     ozetAlan.innerHTML = `<strong>Sürü Süt Özeti:</strong> Toplam ${inekler.length} Baş Hayvan | Sağmal: ${sagmalSayisi} Baş <br> <strong>Toplam Günlük Süt: <span style="color:#27ae60; font-size:16px;">${toplamSut} Litre</span></strong> | İnek Başı Ort: ${ortalama} Lt`;
     ozetAlan.style.display = 'block';
-    return;
 }
 
 function inekSil(kupe) {
@@ -1046,7 +1098,7 @@ function tohumlamaEkle() {
 function tohumlamaListele() {
     let kayitlar  = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
     let listeAlan = document.getElementById('tohumlamaListesiAlan');
-    
+
     if (kayitlar.length === 0) {
         listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Kayıtlı tohumlama bulunmuyor.</p>';
         return;
@@ -1054,19 +1106,22 @@ function tohumlamaListele() {
 
     kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
 
-    let html = `<table class="saglik-tablo" style="min-width: 600px;"><tr><th>Küpe</th><th>Tohumlama</th><th>Boğa Kodu</th><th>Tahmini Doğum</th><th>Durum / Kalan Süre</th><th>İşlem</th></tr>`;
-    
     let bugun = new Date();
     bugun.setHours(0,0,0,0);
 
+    let tablo = document.createElement('table');
+    tablo.className = 'saglik-tablo';
+    tablo.style.minWidth = '600px';
+    tablo.innerHTML = `<tr><th>Küpe</th><th>Tohumlama</th><th>Boğa Kodu</th><th>Tahmini Doğum</th><th>Durum / Kalan Süre</th><th>İşlem</th></tr>`;
+
     kayitlar.forEach(k => {
-        let tTarih    = new Date(k.tarih);
+        let tTarih     = new Date(k.tarih);
         let dogumTarih = new Date(tTarih);
         dogumTarih.setDate(dogumTarih.getDate() + 283);
-        
-        let kalanGun     = Math.round((dogumTarih - bugun) / (1000 * 60 * 60 * 24));
-        let durumMetni   = "";
-        let bgRenk       = "";
+
+        let kalanGun   = Math.round((dogumTarih - bugun) / (1000 * 60 * 60 * 24));
+        let durumMetni = "";
+        let bgRenk     = "";
 
         if (kalanGun < 0) {
             durumMetni = `<span style="color:#e74c3c; font-weight:bold;">Doğum Gerçekleşmiş Olmalı</span>`;
@@ -1077,17 +1132,27 @@ function tohumlamaListele() {
             durumMetni = `<span style="color:#2980b9;">Gebelik Devam (Kalan: ${kalanGun} Gün)</span>`;
         }
 
-        html += `<tr style="${bgRenk}">
+        let tr = document.createElement('tr');
+        tr.style.cssText = bgRenk;
+        tr.innerHTML = `
             <td><strong>${escapeHTML(k.kupe)}</strong></td>
             <td>${tTarih.toLocaleDateString('tr-TR')}</td>
             <td>${escapeHTML(k.sperma || '-')}</td>
             <td style="font-weight:bold; color:#8e44ad;">${dogumTarih.toLocaleDateString('tr-TR')}</td>
             <td>${durumMetni}</td>
-            <td><button class="btn-kucuk-sil" onclick="tohumlamaSil(${Number(k.id)})">SİL</button></td>
-        </tr>`;
+            <td></td>
+        `;
+        // FIX: inline onclick kaldırıldı, event delegation eklendi
+        let silBtn = document.createElement('button');
+        silBtn.className = 'btn-kucuk-sil';
+        silBtn.textContent = 'SİL';
+        silBtn.addEventListener('click', function() { tohumlamaSil(k.id); });
+        tr.querySelector('td:last-child').appendChild(silBtn);
+        tablo.appendChild(tr);
     });
-    html += `</table>`;
-    listeAlan.innerHTML = html;
+
+    listeAlan.innerHTML = '';
+    listeAlan.appendChild(tablo);
 }
 
 function tohumlamaSil(id) {
