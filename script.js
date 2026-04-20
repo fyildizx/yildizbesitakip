@@ -338,6 +338,19 @@ document.addEventListener('input', function(e) {
 
 // ─── SAYFA YÜKLENME ───────────────────────────────────────────────────────
 window.onload = function() {
+    // GÜVENLİK SİGORTASI: 1 saniye sonra yükleniyor ekranını zorla kapat
+    setTimeout(function() {
+        let yukleniyor = document.getElementById('yukleniyor-ekrani');
+        if (yukleniyor) yukleniyor.style.display = 'none';
+
+        // Eğer Firebase takıldığı için giriş ekranı görünmüyorsa zorla göster
+        let authEkrani = document.getElementById('auth-ekrani');
+        let anaUygulama = document.getElementById('ana-uygulama');
+        if (authEkrani && anaUygulama && authEkrani.style.display === 'none' && anaUygulama.style.display === 'none') {
+            authEkrani.style.display = 'flex';
+        }
+    }, 1000);
+
     if (sessionStorage.getItem('bulutVerisiYuklendi') && !uygulamaYuklendiMi) {
         uygulamaBaslat();
         uygulamaYuklendiMi = true;
