@@ -336,14 +336,13 @@ document.addEventListener('input', function(e) {
     }
 });
 
-// ─── SAYFA YÜKLENME ───────────────────────────────────────────────────────
+// ─── SAYFA YÜKLENME VE GÜVENLİK SİGORTASI ────────────────────────────────
 window.onload = function() {
-    // GÜVENLİK SİGORTASI: 1 saniye sonra yükleniyor ekranını zorla kapat
+    // 1 saniye sonra siyah yükleniyor ekranını zorla kapat (Firebase takılmalarına karşı sigorta)
     setTimeout(function() {
         let yukleniyor = document.getElementById('yukleniyor-ekrani');
         if (yukleniyor) yukleniyor.style.display = 'none';
 
-        // Eğer Firebase takıldığı için giriş ekranı görünmüyorsa zorla göster
         let authEkrani = document.getElementById('auth-ekrani');
         let anaUygulama = document.getElementById('ana-uygulama');
         if (authEkrani && anaUygulama && authEkrani.style.display === 'none' && anaUygulama.style.display === 'none') {
@@ -359,6 +358,7 @@ window.onload = function() {
 
 function uygulamaBaslat() {
     isletmeDropdownDoldur();
+    sayaclariCalistir(); // Sayaçları tetikle
 
     let sonModul = localStorage.getItem('sonKullanilanModul') || 'besiModulu';
     let modulBtn = document.getElementById(sonModul === 'besiModulu' ? 'btn-besiModulu' : 'btn-damizlikModulu');
@@ -1387,4 +1387,61 @@ function sutSatisSil(id) {
         localStorage.setItem(APP_PREFIX + 'sutSatis', JSON.stringify(kayitlar));
         sutSatisListele();
     }
+}
+
+// ─── GİRİŞ SAYACI (İSTATİSTİK) ──────────────────────────────────────────
+function sayaclariCalistir() {
+    let bugun = new Date();
+    
+    // Zaman dilimlerini belirle
+    let gunStr = bugun.toISOString().split('T')[0]; // Örn: "2023-10-25"
+    let ayStr = gunStr.substring(0, 7); // Örn: "2023-10"
+    
+    // Yılın kaçıncı haftası olduğunu hesapla
+    let d = new Date();
+    d.setHours(0,0,0,0);
+    d.setDate(d.getDate() + 4 - (d.getDay()||7));
+    let yilbasi = new Date(d.getFullYear(),0,1);
+    let haftaStr = d.getFullYear() + '-W' + Math.ceil((((d - yilbasi)/86400000)+1)/7);
+
+    // Kayıtlı tarihleri kontrol et ve gün geçtiyse sıfırla
+    if (localStorage.getItem('sayac_sonGun') !== gunStr) {
+        localStorage.setItem('sayac_gunluk', '0');
+        localStorage.setItem('sayac_sonGun', gunStr);
+    }
+    if (localStorage.getItem('sayac_sonHafta') !== haftaStr) {
+        localStorage.setItem('sayac_haftalik', '0');
+        localStorage.setItem('sayac_sonHafta', haftaStr);
+    }
+    if (localStorage.getItem('sayac_sonAy') !== ayStr) {
+        localStorage.setItem('sayac_aylik', '0');
+        localStorage.setItem('sayac_sonAy', ayStr);
+    }
+
+    // Mevcut değerleri oku
+    let tGun = parseInt(localStorage.getItem('sayac_gunluk')) || 0;
+    let tHafta = parseInt(localStorage.getItem('sayac_haftalik')) || 0;
+    let tAy = parseInt(localStorage.getItem('sayac_aylik')) || 0;
+    let tTop = parseInt(localStorage.getItem('sayac_toplam')) || 0;
+
+    // Bu oturumda (sayfa yenilemeleri hariç) henüz sayılmadıysa artır
+    if (!sessionStorage.getItem('oturumSayildi')) {
+        tGun++; tHafta++; tAy++; tTop++;
+        localStorage.setItem('sayac_gunluk', tGun);
+        localStorage.setItem('sayac_haftalik', tHafta);
+        localStorage.setItem('sayac_aylik', tAy);
+        localStorage.setItem('sayac_toplam', tTop);
+        sessionStorage.setItem('oturumSayildi', 'true');
+    }
+
+    // Ekrana yazdır
+    let elGun = document.getElementById('sayacGunluk');
+    let elHafta = document.getElementById('sayacHaftalik');
+    let elAy = document.getElementById('sayacAylik');
+    let elTop = document.getElementById('sayacToplam');
+    
+    if(elGun) elGun.innerText = tGun;
+    if(elHafta) elHafta.innerText = tHafta;
+    if(elAy) elAy.innerText = tAy;
+    if(elTop) elTop.innerText = tTop;
 }
