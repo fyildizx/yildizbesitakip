@@ -61,6 +61,28 @@
             <input type="file" id="yedekDosyaInput" accept=".json" style="display:none;" onchange="yedekYukle(event)">
         </div>
 
+        <div class="sayac-bar" style="background: #ecf0f1; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; border: 1px solid #bdc3c7;">
+            <div style="font-size: 11px; color: #7f8c8d; font-weight: bold; margin-bottom: 8px; letter-spacing: 1px;">📊 UYGULAMA KULLANIM İSTATİSTİKLERİ</div>
+            <div style="display: flex; justify-content: space-between; gap: 8px;">
+                <div style="background: #fff; padding: 8px; border-radius: 6px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="font-size: 10px; color: #95a5a6; margin-bottom: 3px;">BUGÜN</div>
+                    <div id="sayacGunluk" style="font-size: 18px; font-weight: bold; color: #2980b9;">0</div>
+                </div>
+                <div style="background: #fff; padding: 8px; border-radius: 6px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="font-size: 10px; color: #95a5a6; margin-bottom: 3px;">BU HAFTA</div>
+                    <div id="sayacHaftalik" style="font-size: 18px; font-weight: bold; color: #27ae60;">0</div>
+                </div>
+                <div style="background: #fff; padding: 8px; border-radius: 6px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="font-size: 10px; color: #95a5a6; margin-bottom: 3px;">BU AY</div>
+                    <div id="sayacAylik" style="font-size: 18px; font-weight: bold; color: #f39c12;">0</div>
+                </div>
+                <div style="background: #fff; padding: 8px; border-radius: 6px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="font-size: 10px; color: #95a5a6; margin-bottom: 3px;">TOPLAM</div>
+                    <div id="sayacToplam" style="font-size: 18px; font-weight: bold; color: #c0392b;">0</div>
+                </div>
+            </div>
+        </div>
+
         <div class="ana-modul-secici">
             <button type="button" class="modul-btn aktif-modul" id="btn-besiModulu" onclick="modulDegistir('besiModulu', this)">🥩 BESİ YÖNETİMİ</button>
             <button type="button" class="modul-btn" id="btn-damizlikModulu" onclick="modulDegistir('damizlikModulu', this)">🥛 DAMIZLIK YÖNETİMİ</button>
