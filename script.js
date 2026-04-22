@@ -176,7 +176,7 @@ let APP_PREFIX = 'isletme_' + aktifIsletmeId + '_';
 let patokSayisi = 0;
 
 const KAYIT_ALANLARI  = ['fiyatArpa','arpaTorbaKg','fiyatMisir','fiyatYem','fiyatSoya','fiyatSaman','guncelEtFiyati'];
-const PATOK_ALANLARI  = ['sayi','kg','hedef','artis','yemProtein','yemEnerji','arpa','misir','yem','soya','saman','alisFiyati','alisKg','alisTarihi','karkasRandiman','fire','aylikArtis'];
+const PATOK_ALANLARI  = ['sayi','kg','hedef','artis','yemProtein','yemEnerji','arpa','misir','yem','soya','saman','alisFiyati','alisKg','alisTarihi','karkasRandiman','fire','aylikArtis', 'aktif'];
 const STOK_ALANLARI   = ['stokArpa','stokMisir','stokYem','stokSoya','stokSaman'];
 const DAMIZLIK_KAYIT_ALANLARI = ['fiyatSutYemi', 'fiyatSilaj', 'fiyatYonca', 'fiyatArpaDamizlik', 'fiyatSamanDamizlik', 'd_sayi', 'd_ortSut', 'd_sutYemi', 'd_silaj', 'd_yonca', 'd_arpa', 'd_saman', 'sutMandiraFiyat', 'sutPerakendeFiyat'];
 const ATLANACAK_ALANLAR = ['saglikTarih','saglikIlac','saglikDoz','saglikPatokSec','inekKupe','inekLaktasyon','inekSut','inekDurum','tohumTarihi','spermaKodu','tohumlamaInekSec', 'giderTarih', 'giderKategori', 'giderAciklama', 'giderTutar', 'sutSatisTarih', 'sutSatisToplam', 'sutMandiraLt', 'sutPerakendeLt'];
@@ -336,9 +336,18 @@ document.addEventListener('input', function(e) {
     }
 });
 
+document.addEventListener('change', function(e) {
+    if (e.target.tagName.toLowerCase() === 'input' && e.target.type === 'checkbox') {
+        hesapla();
+        let stokSekme = document.getElementById('stokSekmesi');
+        if (stokSekme && stokSekme.classList.contains('aktif-sekme')) {
+            stokGoster();
+        }
+    }
+});
+
 // ─── SAYFA YÜKLENME VE GÜVENLİK SİGORTASI ────────────────────────────────
 window.onload = function() {
-    // 1 saniye sonra siyah yükleniyor ekranını zorla kapat (Firebase takılmalarına karşı sigorta)
     setTimeout(function() {
         let yukleniyor = document.getElementById('yukleniyor-ekrani');
         if (yukleniyor) yukleniyor.style.display = 'none';
@@ -358,7 +367,7 @@ window.onload = function() {
 
 function uygulamaBaslat() {
     isletmeDropdownDoldur();
-    sayaclariCalistir(); // Sayaçları tetikle
+    sayaclariCalistir(); 
 
     let sonModul = localStorage.getItem('sonKullanilanModul') || 'besiModulu';
     let modulBtn = document.getElementById(sonModul === 'besiModulu' ? 'btn-besiModulu' : 'btn-damizlikModulu');
@@ -389,7 +398,13 @@ function uygulamaBaslat() {
             let el = document.getElementById('p' + i + '_' + alan);
             if (!el) return;
             let val = localStorage.getItem(APP_PREFIX + 'p' + i + '_' + alan);
-            if (val !== null) el.value = val;
+            if (val !== null) {
+                if (el.type === 'checkbox') {
+                    el.checked = (val === 'true');
+                } else {
+                    el.value = val;
+                }
+            }
         });
     }
 
@@ -429,12 +444,18 @@ function tumAlanlarıKaydet() {
     for (let i = 1; i <= patokSayisi; i++) {
         PATOK_ALANLARI.forEach(alan => {
             let el = document.getElementById('p' + i + '_' + alan);
-            if (el) localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.value);
+            if (el) {
+                if (el.type === 'checkbox') {
+                    localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.checked);
+                } else {
+                    localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.value);
+                }
+            }
         });
     }
 }
 
-// ─── OTOMATİK STOK DÜŞME ─────────────────────────────────────────────────
+// ─── OTOMATİK STOK DÜŞME VE KİLO ALIMI ───────────────────────────────────
 function stokOtomatikDus() {
     let bugun = new Date();
     bugun.setHours(0, 0, 0, 0);
@@ -481,8 +502,13 @@ function stokOtomatikDus() {
                 if (el) el.value = yeniStoklar[key];
             });
 
+            // Hayvan kilolarını artırma (Sadece aktif patoklarda)
             let pSayisi = parseInt(localStorage.getItem(APP_PREFIX + 'patokSayisi')) || 1;
             for (let i = 1; i <= pSayisi; i++) {
+                let aktifDurum = localStorage.getItem(APP_PREFIX + 'p' + i + '_aktif');
+                let isAktif = (aktifDurum === null || aktifDurum === 'true');
+                if (!isAktif) continue; // Patok inaktifse kilo artırma yapma
+                
                 let mevcutKg   = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_kg'))    || 0;
                 let patokArtis = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_artis')) || 1.35;
                 if (mevcutKg > 0) {
@@ -506,7 +532,14 @@ function patokEkle(kaydet = true) {
     yPatok.className = 'patok-card';
     yPatok.id = 'patok_' + patokSayisi;
     yPatok.innerHTML = `
-        <h3>Patok ${patokSayisi} - Rasyon Bilgileri</h3>
+        <h3 style="display: flex; justify-content: space-between; align-items: center; border-bottom: none; padding-bottom: 0;">
+            <span>Patok ${patokSayisi} - Rasyon</span>
+            <label style="font-size: 11px; color: #27ae60; cursor: pointer; display: flex; align-items: center; gap: 5px; background: #e8f8f5; padding: 4px 8px; border-radius: 4px; border: 1px solid #27ae60;">
+                <input type="checkbox" id="p${patokSayisi}_aktif" checked style="width: 14px; height: 14px; margin:0;"> 
+                Aktif Patok
+            </label>
+        </h3>
+        <div style="border-top: 2px solid #ecf0f1; margin-top: 5px; padding-top: 10px;"></div>
         <div class="dortlu-grup">
             <div class="form-group"><label>Hayvan Sayısı</label><input type="number" id="p${patokSayisi}_sayi"></div>
             <div class="form-group"><label>Canlı Kg</label><input type="number" id="p${patokSayisi}_kg" placeholder="Örn: 350"></div>
@@ -623,6 +656,14 @@ function hesapla() {
     let genelArpaKg = 0, genelMisirKg = 0, genelYemKg = 0, genelSoyaKg = 0, genelSamanKg = 0;
 
     for (let i = 1; i <= patokSayisi; i++) {
+        let elAktif = document.getElementById('p' + i + '_aktif');
+        let p_aktif = elAktif ? elAktif.checked : true;
+
+        let patokDiv = document.getElementById('patok_' + i);
+        let finansDiv = document.getElementById('finans_patok_' + i);
+        if (patokDiv) patokDiv.style.opacity = p_aktif ? '1' : '0.5';
+        if (finansDiv) finansDiv.style.opacity = p_aktif ? '1' : '0.5';
+
         let s      = parseFloat(document.getElementById('p' + i + '_sayi').value)   || 0;
         let ckg    = parseFloat(document.getElementById('p' + i + '_kg').value)     || 0;
         let hkg    = parseFloat(document.getElementById('p' + i + '_hedef').value)  || 0;
@@ -646,12 +687,6 @@ function hesapla() {
 
         let patokKesifKg = a_toplam + m_toplam + y_toplam + sy_toplam;
 
-        genelArpaKg  += a_toplam;
-        genelMisirKg += m_toplam;
-        genelYemKg   += y_toplam;
-        genelSoyaKg  += sy_toplam;
-        genelSamanKg += sm_toplam;
-
         let arpaMaliyet  = a_toplam  * fArpa;
         let misirMaliyet = m_toplam  * fMisir;
         let yemMaliyet   = y_toplam  * fYem;
@@ -659,12 +694,20 @@ function hesapla() {
         let samanMaliyet = sm_toplam * fSaman;
         let pt_maliyet   = arpaMaliyet + misirMaliyet + yemMaliyet + soyaMaliyet + samanMaliyet;
 
-        genelArpaGider  += arpaMaliyet;
-        genelMisirGider += misirMaliyet;
-        genelYemGider   += yemMaliyet;
-        genelSoyaGider  += soyaMaliyet;
-        genelSamanGider += samanMaliyet;
-        genelGider      += pt_maliyet;
+        if (p_aktif) {
+            genelArpaKg  += a_toplam;
+            genelMisirKg += m_toplam;
+            genelYemKg   += y_toplam;
+            genelSoyaKg  += sy_toplam;
+            genelSamanKg += sm_toplam;
+
+            genelArpaGider  += arpaMaliyet;
+            genelMisirGider += misirMaliyet;
+            genelYemGider   += yemMaliyet;
+            genelSoyaGider  += soyaMaliyet;
+            genelSamanGider += samanMaliyet;
+            genelGider      += pt_maliyet;
+        }
 
         let hb_maliyet = 0, a_hb = 0, m_hb = 0, y_hb = 0, sy_hb = 0, kesifKilo_hb = 0;
         let rasyonHP = 0, rasyonME = 0, oneriHP = 0, oneriME = 0;
@@ -713,11 +756,13 @@ function hesapla() {
         }
 
         let oneriMetni = ckg > 0 ? `<div class="oneri-kutu">Hedef (Önerilen) ➔ HP: %${oneriHP.toFixed(1)} | ME: ${oneriME.toFixed(2)} Mcal</div>` : "";
+        let aktifUyari = p_aktif ? "" : `<div style="background:#fadbd8; color:#c0392b; font-size:12px; font-weight:bold; padding:6px; border-radius:4px; margin-bottom:8px; border: 1px solid #e74c3c;">⚠️ BU PATOK İNAKTİF: Stoktan düşülmez, maliyete eklenmez.</div>`;
 
         let patokSonucDiv = document.getElementById('sonuc_p' + i);
         if (patokSonucDiv) {
             if (s > 0 || pt_maliyet > 0) {
                 patokSonucDiv.innerHTML = `
+                    ${aktifUyari}
                     <div><strong>Patok Toplam Kesif Yem:</strong> <span style="color:#e67e22;">${patokKesifKg.toFixed(1)} kg</span></div>
                     <div><strong>Günlük Toplam Rasyon Gideri:</strong> ${pt_maliyet.toFixed(2)} TL | <strong>Mal Başı:</strong> <span style="color:#c0392b; font-size:15px;">${hb_maliyet.toFixed(2)} TL</span></div>
                     <div class="tuketim-kutu">
@@ -1393,18 +1438,15 @@ function sutSatisSil(id) {
 function sayaclariCalistir() {
     let bugun = new Date();
     
-    // Zaman dilimlerini belirle
-    let gunStr = bugun.toISOString().split('T')[0]; // Örn: "2023-10-25"
-    let ayStr = gunStr.substring(0, 7); // Örn: "2023-10"
+    let gunStr = bugun.toISOString().split('T')[0]; 
+    let ayStr = gunStr.substring(0, 7); 
     
-    // Yılın kaçıncı haftası olduğunu hesapla
     let d = new Date();
     d.setHours(0,0,0,0);
     d.setDate(d.getDate() + 4 - (d.getDay()||7));
     let yilbasi = new Date(d.getFullYear(),0,1);
     let haftaStr = d.getFullYear() + '-W' + Math.ceil((((d - yilbasi)/86400000)+1)/7);
 
-    // Kayıtlı tarihleri kontrol et ve gün geçtiyse sıfırla
     if (localStorage.getItem('sayac_sonGun') !== gunStr) {
         localStorage.setItem('sayac_gunluk', '0');
         localStorage.setItem('sayac_sonGun', gunStr);
@@ -1418,13 +1460,11 @@ function sayaclariCalistir() {
         localStorage.setItem('sayac_sonAy', ayStr);
     }
 
-    // Mevcut değerleri oku
     let tGun = parseInt(localStorage.getItem('sayac_gunluk')) || 0;
     let tHafta = parseInt(localStorage.getItem('sayac_haftalik')) || 0;
     let tAy = parseInt(localStorage.getItem('sayac_aylik')) || 0;
     let tTop = parseInt(localStorage.getItem('sayac_toplam')) || 0;
 
-    // Bu oturumda (sayfa yenilemeleri hariç) henüz sayılmadıysa artır
     if (!sessionStorage.getItem('oturumSayildi')) {
         tGun++; tHafta++; tAy++; tTop++;
         localStorage.setItem('sayac_gunluk', tGun);
@@ -1434,7 +1474,6 @@ function sayaclariCalistir() {
         sessionStorage.setItem('oturumSayildi', 'true');
     }
 
-    // Ekrana yazdır
     let elGun = document.getElementById('sayacGunluk');
     let elHafta = document.getElementById('sayacHaftalik');
     let elAy = document.getElementById('sayacAylik');
