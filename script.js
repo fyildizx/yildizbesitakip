@@ -2,12 +2,8 @@
 function googleIleGiris() {
     const provider = new firebase.auth.GoogleAuthProvider();
     auth.signInWithPopup(provider)
-        .then((result) => {
-            console.log("Google ile giriş başarılı!");
-        })
-        .catch((error) => {
-            document.getElementById('auth-hata').innerText = "Hata: " + firebaseHataCevir(error.code);
-        });
+        .then((result) => { console.log("Google ile giriş başarılı!"); })
+        .catch((error) => { document.getElementById('auth-hata').innerText = "Hata: " + firebaseHataCevir(error.code); });
 }
 const auth = firebase.auth();
 let mevcutKullanici = null;
@@ -33,48 +29,31 @@ function kayitOl() {
         .catch(error => { document.getElementById('auth-hata').innerText = "Hata: " + firebaseHataCevir(error.code); });
 }
 
-// ÇIKIŞ YAPMA FONKSİYONU
-function cikisYap() {
-    auth.signOut().then(() => location.reload());
-}
+function cikisYap() { auth.signOut().then(() => location.reload()); }
 
-// TREBEDIT TEST GİRİŞİ
 function gelistiriciGiris() {
     mevcutKullanici = { uid: "test_kullanici_123" };
-    
     let yukleniyor = document.getElementById('yukleniyor-ekrani');
     if(yukleniyor) yukleniyor.style.display = 'none';
-
     document.getElementById('auth-ekrani').style.display = 'none';
     document.getElementById('ana-uygulama').style.display = 'block';
     sessionStorage.setItem('bulutVerisiYuklendi', '1');
-    
-    if(!uygulamaYuklendiMi) {
-        uygulamaBaslat();
-        uygulamaYuklendiMi = true;
-    }
+    if(!uygulamaYuklendiMi) { uygulamaBaslat(); uygulamaYuklendiMi = true; }
 }
 
-// FİREBASE HATA KODLARINI TÜRKÇE'YE ÇEVİR
 function firebaseHataCevir(kod) {
     const hatalar = {
-        'auth/user-not-found':         'Bu e-posta adresiyle kayıtlı kullanıcı bulunamadı.',
-        'auth/wrong-password':         'Şifre hatalı. Lütfen tekrar deneyin.',
-        'auth/invalid-email':          'Geçersiz e-posta adresi.',
-        'auth/email-already-in-use':   'Bu e-posta adresi zaten kullanımda.',
-        'auth/weak-password':          'Şifre çok zayıf. En az 6 karakter kullanın.',
-        'auth/too-many-requests':      'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.',
-        'auth/network-request-failed': 'Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.',
-        'auth/popup-closed-by-user':   'Google giriş penceresi kapatıldı.',
-        'auth/invalid-credential':     'E-posta veya şifre hatalı.',
+        'auth/user-not-found':         'Kullanıcı bulunamadı.',
+        'auth/wrong-password':         'Şifre hatalı.',
+        'auth/invalid-email':          'Geçersiz e-posta.',
+        'auth/email-already-in-use':   'Bu e-posta zaten kullanımda.',
+        'auth/weak-password':          'Şifre çok zayıf. (En az 6 karakter)',
     };
-    return hatalar[kod] || ('Bilinmeyen hata: ' + kod);
+    return hatalar[kod] || ('Hata: ' + kod);
 }
 
-// OTURUM DURUMUNU İZLE
 auth.onAuthStateChanged((user) => {
     if (mevcutKullanici && mevcutKullanici.uid === "test_kullanici_123") return;
-
     let yukleniyor = document.getElementById('yukleniyor-ekrani');
     if(yukleniyor) yukleniyor.style.display = 'none';
 
@@ -82,22 +61,14 @@ auth.onAuthStateChanged((user) => {
         mevcutKullanici = user;
         document.getElementById('auth-ekrani').style.display = 'none';
         document.getElementById('ana-uygulama').style.display = 'block';
-
-        if (!sessionStorage.getItem('bulutVerisiYuklendi')) {
-            verileriBuluttanCek(user.uid);
-        } else {
-            if(!uygulamaYuklendiMi) {
-                uygulamaBaslat();
-                uygulamaYuklendiMi = true;
-            }
-        }
+        if (!sessionStorage.getItem('bulutVerisiYuklendi')) { verileriBuluttanCek(user.uid); } 
+        else { if(!uygulamaYuklendiMi) { uygulamaBaslat(); uygulamaYuklendiMi = true; } }
     } else {
         document.getElementById('auth-ekrani').style.display = 'flex';
         document.getElementById('ana-uygulama').style.display = 'none';
     }
 });
 
-// Bulut yedekleme
 function verileriBulutaYedekle() {
     if (!mevcutKullanici || mevcutKullanici.uid === "test_kullanici_123") return;
     const data = {};
@@ -105,9 +76,7 @@ function verileriBulutaYedekle() {
         const k = localStorage.key(i);
         data[k] = localStorage.getItem(k);
     }
-    database.ref('users/' + mevcutKullanici.uid + '/' + aktifIsletmeId).set(data)
-        .then(() => console.log('Bulut yedeği alındı.'))
-        .catch(err => console.error('Bulut yedek hatası:', err));
+    database.ref('users/' + mevcutKullanici.uid + '/' + aktifIsletmeId).set(data).catch(err => console.error(err));
 }
 
 function verileriBuluttanCek(uid) {
@@ -123,44 +92,27 @@ function verileriBuluttanCek(uid) {
             if (data) {
                 const izinliPrefixler = ['isletme_', 'aktifIsletmeId', 'isletmeListesi', 'favoriIsletmeId'];
                 Object.keys(data).forEach(key => {
-                    const izinli = izinliPrefixler.some(prefix => key.startsWith(prefix));
-                    if (izinli) {
-                        localStorage.setItem(key, data[key]);
-                    }
+                    if (izinliPrefixler.some(prefix => key.startsWith(prefix))) localStorage.setItem(key, data[key]);
                 });
-                console.log('Buluttan veri başarıyla yüklendi.');
-            } else {
-                console.log('Bulutta bu işletme için veri bulunamadı, yerel veri kullanılıyor.');
             }
             sessionStorage.setItem('bulutVerisiYuklendi', '1');
             location.reload();
         })
         .catch(err => {
-            console.error('Buluttan veri çekme hatası:', err);
             sessionStorage.setItem('bulutVerisiYuklendi', '1');
             if(!uygulamaYuklendiMi){ uygulamaBaslat(); uygulamaYuklendiMi = true; }
         });
 }
 
-// ─── YARDIMCI FONKSİYONLAR ───────────────────────────────────────────────
 function escapeHTML(str) {
     if (str === null || str === undefined) return '';
-    return String(str)
-        .replace(/&/g,  "&amp;")
-        .replace(/</g,  "&lt;")
-        .replace(/>/g,  "&gt;")
-        .replace(/"/g,  "&quot;")
-        .replace(/'/g,  "&#39;");
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-// ─── İŞLETME YÖNETİMİ ───────────────────────────────────────────────────
 let isletmeler = JSON.parse(localStorage.getItem('isletmeListesi')) || [{id: '1', ad: 'Ana Çiftliğim'}];
-
 if (!sessionStorage.getItem('uygulamaBasladi')) {
     let favId = localStorage.getItem('favoriIsletmeId');
-    if (favId && isletmeler.find(i => i.id === favId)) {
-        localStorage.setItem('aktifIsletmeId', favId);
-    }
+    if (favId && isletmeler.find(i => i.id === favId)) localStorage.setItem('aktifIsletmeId', favId);
     sessionStorage.setItem('uygulamaBasladi', 'true');
 }
 
@@ -180,7 +132,6 @@ const PATOK_ALANLARI  = ['sayi','kg','hedef','artis','yemProtein','yemEnerji','a
 const STOK_ALANLARI   = ['stokArpa','stokMisir','stokYem','stokSoya','stokSaman'];
 const DAMIZLIK_KAYIT_ALANLARI = ['fiyatSutYemi', 'fiyatSilaj', 'fiyatYonca', 'fiyatArpaDamizlik', 'fiyatSamanDamizlik', 'd_sayi', 'd_ortSut', 'd_sutYemi', 'd_silaj', 'd_yonca', 'd_arpa', 'd_saman', 'sutMandiraFiyat', 'sutPerakendeFiyat'];
 const ATLANACAK_ALANLAR = ['saglikTarih','saglikIlac','saglikDoz','saglikPatokSec','inekKupe','inekLaktasyon','inekSut','inekDurum','tohumTarihi','spermaKodu','tohumlamaInekSec', 'giderTarih', 'giderKategori', 'giderAciklama', 'giderTutar', 'sutSatisTarih', 'sutSatisToplam', 'sutMandiraLt', 'sutPerakendeLt'];
-
 const IZINLI_KEY_PREFIXLER = ['isletme_', 'aktifIsletmeId', 'isletmeListesi', 'favoriIsletmeId'];
 
 function isletmeDropdownDoldur() {
@@ -189,18 +140,13 @@ function isletmeDropdownDoldur() {
     isletmeler.forEach(i => {
         let opt = document.createElement('option');
         opt.value = i.id;
-        let favYildiz = (i.id === localStorage.getItem('favoriIsletmeId')) ? ' ⭐ (Favori)' : '';
-        opt.text = i.ad + favYildiz;
+        opt.text = i.ad + ((i.id === localStorage.getItem('favoriIsletmeId')) ? ' ⭐ (Favori)' : '');
         if (i.id === aktifIsletmeId) opt.selected = true;
         select.appendChild(opt);
     });
 }
 
-function isletmeDegistir(id) {
-    localStorage.setItem('aktifIsletmeId', id);
-    location.reload();
-}
-
+function isletmeDegistir(id) { localStorage.setItem('aktifIsletmeId', id); location.reload(); }
 function yeniIsletmeEkle() {
     let ad = prompt("Yeni işletmenin adını giriniz:");
     if (!ad) return;
@@ -210,31 +156,23 @@ function yeniIsletmeEkle() {
     localStorage.setItem('aktifIsletmeId', yeniId);
     location.reload();
 }
-
 function isletmeSil() {
-    if (isletmeler.length <= 1) {
-        alert("Tek kalan ana işletmeyi silemezsiniz!");
-        return;
-    }
+    if (isletmeler.length <= 1) { alert("Tek kalan ana işletmeyi silemezsiniz!"); return; }
     if (confirm(aktifIsletme.ad + " işletmesini silmek istediğinize emin misiniz? Bütün verileri kalıcı olarak silinecek!")) {
         let silinecekPrefix = 'isletme_' + aktifIsletmeId + '_';
-        Object.keys(localStorage).forEach(key => {
-            if (key.startsWith(silinecekPrefix)) localStorage.removeItem(key);
-        });
+        Object.keys(localStorage).forEach(key => { if (key.startsWith(silinecekPrefix)) localStorage.removeItem(key); });
         isletmeler = isletmeler.filter(i => i.id !== aktifIsletmeId);
         localStorage.setItem('isletmeListesi', JSON.stringify(isletmeler));
         localStorage.setItem('aktifIsletmeId', isletmeler[0].id);
         location.reload();
     }
 }
-
 function favoriIsletmeKaydet() {
     localStorage.setItem('favoriIsletmeId', aktifIsletmeId);
     alert(aktifIsletme.ad + " işletmesi artık uygulamayı açtığınızda ilk olarak yüklenecek!");
     isletmeDropdownDoldur();
 }
 
-// ─── YEDEK / GERİ YÜKLEME ───────────────────────────────────────────────
 function yedekAl() {
     let yedekVerisi = {};
     Object.keys(localStorage).forEach(key => {
@@ -242,64 +180,42 @@ function yedekAl() {
             yedekVerisi[key] = localStorage.getItem(key);
         }
     });
-    let json = JSON.stringify(yedekVerisi, null, 2);
-    let blob = new Blob([json], {type: 'application/json'});
-    let url  = URL.createObjectURL(blob);
-    let a    = document.createElement('a');
-    let tarih = new Date().toLocaleDateString('tr-TR').replace(/\./g, '-');
-    a.href     = url;
-    a.download = 'yildiz_ciftlik_yedek_' + tarih + '.json';
+    let a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(yedekVerisi, null, 2)], {type: 'application/json'}));
+    a.download = 'yildiz_ciftlik_yedek_' + new Date().toLocaleDateString('tr-TR').replace(/\./g, '-') + '.json';
     a.click();
-    URL.revokeObjectURL(url);
 }
 
 function yedekYukle(event) {
     let dosya = event.target.files[0];
     if (!dosya) return;
-    if (!confirm("Yedek yüklenecek. Mevcut veriler üzerine yazılacak. Emin misiniz?")) {
-        event.target.value = '';
-        return;
-    }
+    if (!confirm("Yedek yüklenecek. Mevcut veriler üzerine yazılacak. Emin misiniz?")) { event.target.value = ''; return; }
     let reader = new FileReader();
     reader.onload = function(e) {
         try {
             let veri = JSON.parse(e.target.result);
             let yazilan = 0;
-            let atlanan = 0;
             Object.keys(veri).forEach(key => {
-                const izinli = IZINLI_KEY_PREFIXLER.some(prefix => key.startsWith(prefix));
-                if (izinli) {
-                    if (typeof veri[key] === 'string') {
-                        localStorage.setItem(key, veri[key]);
-                        yazilan++;
-                    }
-                } else {
-                    atlanan++;
+                if (IZINLI_KEY_PREFIXLER.some(prefix => key.startsWith(prefix))) {
+                    if (typeof veri[key] === 'string') { localStorage.setItem(key, veri[key]); yazilan++; }
                 }
             });
-
-            if (yazilan === 0) {
-                alert("Hata: Bu dosya geçerli bir Yıldız Çiftlik yedeği değil!");
-                return;
-            }
-
-            alert("Yedek başarıyla yüklendi! (" + yazilan + " kayıt)" + (atlanan > 0 ? "\n(" + atlanan + " bilinmeyen kayıt atlandı)" : "") + "\nSayfa yenileniyor...");
+            if (yazilan === 0) { alert("Hata: Geçersiz yedek dosyası!"); return; }
+            alert("Yedek başarıyla yüklendi! Sayfa yenileniyor...");
             location.reload();
-        } catch(err) {
-            alert("Hata: Geçersiz yedek dosyası! (" + err.message + ")");
-        }
+        } catch(err) { alert("Hata: Geçersiz yedek!"); }
     };
     reader.readAsText(dosya);
     event.target.value = '';
 }
 
-// ─── MODÜL / SEKME YÖNETİMİ ─────────────────────────────────────────────
 function modulDegistir(modulId, btnElement) {
     document.querySelectorAll('.modul-icerik').forEach(el => el.classList.remove('aktif-modul-icerik'));
     document.querySelectorAll('.modul-btn').forEach(el => el.classList.remove('aktif-modul'));
     document.getElementById(modulId).classList.add('aktif-modul-icerik');
     btnElement.classList.add('aktif-modul');
     localStorage.setItem('sonKullanilanModul', modulId);
+    if(modulId === 'kesimModulu') { kesimListele(); }
 }
 
 function sekmeDegistir(sekmeId, btnElement) {
@@ -308,8 +224,7 @@ function sekmeDegistir(sekmeId, btnElement) {
     document.getElementById(sekmeId).classList.add('aktif-sekme');
     btnElement.classList.add('aktif');
     if (sekmeId === 'stokSekmesi') {
-        let arpaTorbaDurum = document.getElementById('arpaTorbaKg').value || 43;
-        document.getElementById('arpaTorbaKg_stok').value = arpaTorbaDurum;
+        document.getElementById('arpaTorbaKg_stok').value = document.getElementById('arpaTorbaKg').value || 43;
         stokGoster();
     }
 }
@@ -321,17 +236,13 @@ function sekmeDegistirDamizlik(sekmeId, btnElement) {
     btnElement.classList.add('aktif');
 }
 
-// ─── INPUT DEĞİŞİKLİK DİNLEYİCİ ─────────────────────────────────────────
 document.addEventListener('input', function(e) {
-    let hedef = e.target;
-    if (hedef.tagName.toLowerCase() === 'input' || hedef.tagName.toLowerCase() === 'select') {
-        if (!ATLANACAK_ALANLAR.includes(hedef.id)) {
+    if (e.target.tagName.toLowerCase() === 'input' || e.target.tagName.toLowerCase() === 'select') {
+        if (!ATLANACAK_ALANLAR.includes(e.target.id) && !e.target.id.startsWith('kesimModal')) {
             hesapla();
             damizlikRasyonHesapla();
             let stokSekme = document.getElementById('stokSekmesi');
-            if (stokSekme && stokSekme.classList.contains('aktif-sekme')) {
-                stokGoster();
-            }
+            if (stokSekme && stokSekme.classList.contains('aktif-sekme')) stokGoster();
         }
     }
 });
@@ -340,18 +251,14 @@ document.addEventListener('change', function(e) {
     if (e.target.tagName.toLowerCase() === 'input' && e.target.type === 'checkbox') {
         hesapla();
         let stokSekme = document.getElementById('stokSekmesi');
-        if (stokSekme && stokSekme.classList.contains('aktif-sekme')) {
-            stokGoster();
-        }
+        if (stokSekme && stokSekme.classList.contains('aktif-sekme')) stokGoster();
     }
 });
 
-// ─── SAYFA YÜKLENME VE GÜVENLİK SİGORTASI ────────────────────────────────
 window.onload = function() {
     setTimeout(function() {
         let yukleniyor = document.getElementById('yukleniyor-ekrani');
         if (yukleniyor) yukleniyor.style.display = 'none';
-
         let authEkrani = document.getElementById('auth-ekrani');
         let anaUygulama = document.getElementById('ana-uygulama');
         if (authEkrani && anaUygulama && authEkrani.style.display === 'none' && anaUygulama.style.display === 'none') {
@@ -370,28 +277,15 @@ function uygulamaBaslat() {
     sayaclariCalistir(); 
 
     let sonModul = localStorage.getItem('sonKullanilanModul') || 'besiModulu';
-    let modulBtn = document.getElementById(sonModul === 'besiModulu' ? 'btn-besiModulu' : 'btn-damizlikModulu');
+    let modulBtn = document.getElementById('btn-' + sonModul);
     if (modulBtn) modulDegistir(sonModul, modulBtn);
 
     let kayitliPatokSayisi = localStorage.getItem(APP_PREFIX + 'patokSayisi');
     let adet = kayitliPatokSayisi ? parseInt(kayitliPatokSayisi) : 1;
-    for (let i = 1; i <= adet; i++) {
-        patokEkle(false);
-    }
+    for (let i = 1; i <= adet; i++) { patokEkle(false); }
 
-    KAYIT_ALANLARI.forEach(id => {
-        let el = document.getElementById(id);
-        if (!el) return;
-        let val = localStorage.getItem(APP_PREFIX + id);
-        if (val !== null) el.value = val;
-    });
-
-    DAMIZLIK_KAYIT_ALANLARI.forEach(id => {
-        let el = document.getElementById(id);
-        if (!el) return;
-        let val = localStorage.getItem(APP_PREFIX + id);
-        if (val !== null) el.value = val;
-    });
+    KAYIT_ALANLARI.forEach(id => { let val = localStorage.getItem(APP_PREFIX + id); if (val !== null && document.getElementById(id)) document.getElementById(id).value = val; });
+    DAMIZLIK_KAYIT_ALANLARI.forEach(id => { let val = localStorage.getItem(APP_PREFIX + id); if (val !== null && document.getElementById(id)) document.getElementById(id).value = val; });
 
     for (let i = 1; i <= patokSayisi; i++) {
         PATOK_ALANLARI.forEach(alan => {
@@ -399,28 +293,21 @@ function uygulamaBaslat() {
             if (!el) return;
             let val = localStorage.getItem(APP_PREFIX + 'p' + i + '_' + alan);
             if (val !== null) {
-                if (el.type === 'checkbox') {
-                    el.checked = (val === 'true');
-                } else {
-                    el.value = val;
-                }
+                if (el.type === 'checkbox') el.checked = (val === 'true');
+                else el.value = val;
             }
         });
     }
 
     let arpaBirim = localStorage.getItem(APP_PREFIX + 'stokArpaBirim');
     if (arpaBirim) document.getElementById('stokArpaBirim').value = arpaBirim;
-    STOK_ALANLARI.forEach(id => {
-        let val = localStorage.getItem(APP_PREFIX + id);
-        if (val !== null) document.getElementById(id).value = val;
-    });
+    STOK_ALANLARI.forEach(id => { let val = localStorage.getItem(APP_PREFIX + id); if (val !== null && document.getElementById(id)) document.getElementById(id).value = val; });
 
     let bugunFormat = new Date().toISOString().split('T')[0];
-    let saglikTarihi = document.getElementById('saglikTarih');
-    if (saglikTarihi) saglikTarihi.value = bugunFormat;
-
-    document.getElementById('giderTarih').value = bugunFormat;
-    document.getElementById('sutSatisTarih').value = bugunFormat;
+    if(document.getElementById('saglikTarih')) document.getElementById('saglikTarih').value = bugunFormat;
+    if(document.getElementById('giderTarih')) document.getElementById('giderTarih').value = bugunFormat;
+    if(document.getElementById('sutSatisTarih')) document.getElementById('sutSatisTarih').value = bugunFormat;
+    if(document.getElementById('kesimModal_tarih')) document.getElementById('kesimModal_tarih').value = bugunFormat;
 
     stokOtomatikDus();
     hesapla();
@@ -433,23 +320,17 @@ function uygulamaBaslat() {
     tohumlamaListele();
     giderListele();
     sutSatisListele();
+    kesimListele();
 }
 
-// ─── VERİ KAYIT YARDIMCISI ───────────────────────────────────────────────
 function tumAlanlarıKaydet() {
-    KAYIT_ALANLARI.forEach(id => {
-        let el = document.getElementById(id);
-        if (el) localStorage.setItem(APP_PREFIX + id, el.value);
-    });
+    KAYIT_ALANLARI.forEach(id => { let el = document.getElementById(id); if (el) localStorage.setItem(APP_PREFIX + id, el.value); });
     for (let i = 1; i <= patokSayisi; i++) {
         PATOK_ALANLARI.forEach(alan => {
             let el = document.getElementById('p' + i + '_' + alan);
             if (el) {
-                if (el.type === 'checkbox') {
-                    localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.checked);
-                } else {
-                    localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.value);
-                }
+                if (el.type === 'checkbox') localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.checked);
+                else localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, el.value);
             }
         });
     }
@@ -489,25 +370,17 @@ function stokOtomatikDus() {
             sSaman = Math.max(0, sSaman - (gSaman * gunFarki));
             sArpa  = (arpaBirim === 'torba') ? (arpaKgOlarak / arpaTorbaKg) : arpaKgOlarak;
 
-            let yeniStoklar = {
-                stokArpa:  sArpa.toFixed(1),
-                stokMisir: sMisir.toFixed(1),
-                stokYem:   sYem.toFixed(1),
-                stokSoya:  sSoya.toFixed(1),
-                stokSaman: sSaman.toFixed(1)
-            };
+            let yeniStoklar = { stokArpa: sArpa.toFixed(1), stokMisir: sMisir.toFixed(1), stokYem: sYem.toFixed(1), stokSoya: sSoya.toFixed(1), stokSaman: sSaman.toFixed(1) };
             Object.keys(yeniStoklar).forEach(key => {
                 localStorage.setItem(APP_PREFIX + key, yeniStoklar[key]);
                 let el = document.getElementById(key);
                 if (el) el.value = yeniStoklar[key];
             });
 
-            // Hayvan kilolarını artırma (Sadece aktif patoklarda)
             let pSayisi = parseInt(localStorage.getItem(APP_PREFIX + 'patokSayisi')) || 1;
             for (let i = 1; i <= pSayisi; i++) {
                 let aktifDurum = localStorage.getItem(APP_PREFIX + 'p' + i + '_aktif');
-                let isAktif = (aktifDurum === null || aktifDurum === 'true');
-                if (!isAktif) continue; // Patok inaktifse kilo artırma yapma
+                if (aktifDurum !== null && aktifDurum !== 'true') continue; 
                 
                 let mevcutKg   = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_kg'))    || 0;
                 let patokArtis = parseFloat(localStorage.getItem(APP_PREFIX + 'p' + i + '_artis')) || 1.35;
@@ -558,7 +431,11 @@ function patokEkle(kaydet = true) {
             <div><label class="kucuk-label">Saman (Top. kg)</label><input type="number" id="p${patokSayisi}_saman" step="0.1"></div>
         </div>
         <div id="sonuc_p${patokSayisi}" class="patok-ic-sonuc" style="display:none;"></div>
-        <button type="button" onclick="patokSil(${patokSayisi})" style="background-color: #c0392b; margin-top: 15px;">🗑️ BU PATOKU SİL</button>
+        
+        <div style="display:flex; gap:10px; margin-top: 15px;">
+            <button type="button" onclick="patokuKesimeGonder(${patokSayisi})" style="background-color: #f39c12; flex:1; font-size:12px;">🔪 KESİME GÖNDER</button>
+            <button type="button" onclick="patokSil(${patokSayisi})" style="background-color: #c0392b; flex:1; font-size:12px;">🗑️ PATOKU SİL</button>
+        </div>
     `;
     rContainer.appendChild(yPatok);
 
@@ -587,28 +464,19 @@ function patokEkle(kaydet = true) {
 }
 
 function patokSil(silId) {
-    if (patokSayisi <= 1 || silId === 1) {
-        alert("Sistemde en az 1 patok kalmalıdır ve Patok 1 silinemez!");
-        return;
-    }
-
+    if (patokSayisi <= 1 || silId === 1) { alert("Sistemde en az 1 patok kalmalıdır ve Patok 1 silinemez!"); return; }
     if (!confirm(silId + " numaralı patoku siliyorum. Emin misin?")) return;
 
     for (let i = silId; i < patokSayisi; i++) {
         let sonrakiId = i + 1;
         PATOK_ALANLARI.forEach(alan => {
             let sonrakiDeger = localStorage.getItem(APP_PREFIX + 'p' + sonrakiId + '_' + alan);
-            if (sonrakiDeger !== null) {
-                localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, sonrakiDeger);
-            } else {
-                localStorage.removeItem(APP_PREFIX + 'p' + i + '_' + alan);
-            }
+            if (sonrakiDeger !== null) localStorage.setItem(APP_PREFIX + 'p' + i + '_' + alan, sonrakiDeger);
+            else localStorage.removeItem(APP_PREFIX + 'p' + i + '_' + alan);
         });
     }
 
-    PATOK_ALANLARI.forEach(alan => {
-        localStorage.removeItem(APP_PREFIX + 'p' + patokSayisi + '_' + alan);
-    });
+    PATOK_ALANLARI.forEach(alan => localStorage.removeItem(APP_PREFIX + 'p' + patokSayisi + '_' + alan));
 
     localStorage.removeItem(APP_PREFIX + 'tuketim_arpa');
     localStorage.removeItem(APP_PREFIX + 'tuketim_misir');
@@ -629,7 +497,6 @@ function patokSil(silId) {
 
     patokSayisi--;
     localStorage.setItem(APP_PREFIX + 'patokSayisi', patokSayisi);
-
     alert("Patok silindi!");
     location.reload();
 }
@@ -810,6 +677,9 @@ function hesapla() {
                 let ortalamaGecmisMaliyet = hb_maliyet * tuketimKatsayisi;
                 let toplamYedirilenYem    = iceridekiGun * ortalamaGecmisMaliyet;
                 let guncelMaliyet         = alisFiyati + toplamYedirilenYem;
+                
+                // BU DEĞERİ MODAL İÇİN SAKLIYORUZ (Gizli attribute olarak)
+                finansSonucDiv.setAttribute('data-guncel-maliyet', guncelMaliyet.toFixed(2));
 
                 let tahminiKarZarar = netSatisDegeri - guncelMaliyet;
                 let karZararRenk    = tahminiKarZarar >= 0 ? "27ae60" : "e74c3c";
@@ -913,7 +783,7 @@ function hesapla() {
     tumAlanlarıKaydet();
 }
 
-// ─── STOK GÖSTER ─────────────────────────────────────────────────────────
+// STOK İŞLEMLERİ (Öncekiyle aynı)
 function stokGoster() {
     let sArpa     = parseFloat(document.getElementById('stokArpa').value)  || 0;
     let arpaBirim = document.getElementById('stokArpaBirim').value;
@@ -956,11 +826,8 @@ function stokGoster() {
                     <strong>${isimGuveli}</strong><span style="color:#e74c3c; font-size:11px;">${uyari}</span><br>
                     <span style="font-size:12px; color:#555;">Kalan: ${kalanGun} Gün</span>
                 </div>
-                <div style="text-align:right; font-size:13px; font-weight:bold; color:#2c3e50;">
-                    ${tarihMetni}
-                </div>
-            </div>
-        `;
+                <div style="text-align:right; font-size:13px; font-weight:bold; color:#2c3e50;">${tarihMetni}</div>
+            </div>`;
     }
 
     let html = `
@@ -970,85 +837,49 @@ function stokGoster() {
         ${bitisTarihiBul(sSoya,         gSoya,  "Soya Küspesi")}
         ${bitisTarihiBul(sSaman,        gSaman, "Saman")}
     `;
-
     let stokSonuc = document.getElementById('stokSonucAlani');
-    if (stokSonuc) {
-        stokSonuc.innerHTML = html;
-        stokSonuc.style.display = 'block';
-    }
+    if (stokSonuc) { stokSonuc.innerHTML = html; stokSonuc.style.display = 'block'; }
 }
 
-function stokHesapla() { stokGoster(); }
-
-// ─── SAĞLIK TAKİBİ ───────────────────────────────────────────────────────
 function saglikPatokGuncelle() {
     let select = document.getElementById('saglikPatokSec');
     if (!select) return;
     select.innerHTML = '';
     for (let i = 1; i <= patokSayisi; i++) {
         let option = document.createElement('option');
-        option.value = String(i);
-        option.text  = 'Patok ' + i;
+        option.value = String(i); option.text = 'Patok ' + i;
         select.appendChild(option);
     }
 }
-
 function saglikKaydet() {
-    let pNo   = document.getElementById('saglikPatokSec').value;
+    let pNo = document.getElementById('saglikPatokSec').value;
     let tarih = document.getElementById('saglikTarih').value;
-    let ilac  = document.getElementById('saglikIlac').value.trim();
-    let doz   = document.getElementById('saglikDoz').value.trim() || '-';
-
+    let ilac = document.getElementById('saglikIlac').value.trim();
+    let doz = document.getElementById('saglikDoz').value.trim() || '-';
     if (!tarih || !ilac) { alert("Lütfen Tarih ve İlaç/Aşı Adı giriniz!"); return; }
-
     let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
     kayitlar.push({ id: Date.now(), patok: String(pNo), tarih: tarih, ilac: ilac, doz: doz });
     localStorage.setItem(APP_PREFIX + 'saglik', JSON.stringify(kayitlar));
-
-    document.getElementById('saglikIlac').value = '';
-    document.getElementById('saglikDoz').value  = '';
+    document.getElementById('saglikIlac').value = ''; document.getElementById('saglikDoz').value = '';
     saglikListele();
 }
-
 function saglikListele() {
-    let kayitlar  = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
+    let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
     let gecmisDiv = document.getElementById('saglikGecmisi');
     if (!gecmisDiv) return;
-
-    if (kayitlar.length === 0) {
-        gecmisDiv.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kayıtlı bir aşı/ilaç bulunmuyor.</p>';
-        return;
-    }
-
+    if (kayitlar.length === 0) { gecmisDiv.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kayıtlı bir aşı/ilaç bulunmuyor.</p>'; return; }
     kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-
-    let tablo = document.createElement('table');
-    tablo.className = 'saglik-tablo';
+    let tablo = document.createElement('table'); tablo.className = 'saglik-tablo';
     tablo.innerHTML = `<tr><th>Patok</th><th>Tarih</th><th>İlaç/Aşı</th><th>Doz</th><th>İşlem</th></tr>`;
-
     kayitlar.forEach(k => {
-        let trTarih = new Date(k.tarih).toLocaleDateString('tr-TR');
         let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>P-${escapeHTML(String(k.patok))}</strong></td>
-            <td>${escapeHTML(trTarih)}</td>
-            <td>${escapeHTML(k.ilac)}</td>
-            <td>${escapeHTML(k.doz)}</td>
-            <td></td>
-        `;
-        let silBtn = document.createElement('button');
-        silBtn.type = 'button';
-        silBtn.className = 'btn-kucuk-sil';
-        silBtn.textContent = 'SİL';
+        tr.innerHTML = `<td><strong>P-${escapeHTML(String(k.patok))}</strong></td><td>${escapeHTML(new Date(k.tarih).toLocaleDateString('tr-TR'))}</td><td>${escapeHTML(k.ilac)}</td><td>${escapeHTML(k.doz)}</td><td></td>`;
+        let silBtn = document.createElement('button'); silBtn.type = 'button'; silBtn.className = 'btn-kucuk-sil'; silBtn.textContent = 'SİL';
         silBtn.addEventListener('click', function() { saglikSil(k.id); });
-        tr.querySelector('td:last-child').appendChild(silBtn);
-        tablo.appendChild(tr);
+        tr.querySelector('td:last-child').appendChild(silBtn); tablo.appendChild(tr);
     });
-
-    gecmisDiv.innerHTML = '';
-    gecmisDiv.appendChild(tablo);
+    gecmisDiv.innerHTML = ''; gecmisDiv.appendChild(tablo);
 }
-
 function saglikSil(id) {
     if (!confirm("Bu sağlık kaydını silmek istediğinize emin misiniz?")) return;
     let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'saglik')) || [];
@@ -1057,173 +888,90 @@ function saglikSil(id) {
     saglikListele();
 }
 
-// ─── DAMIZLIK: İNEK ──────────────────────────────────────────────────────
 function inekEkle() {
-    let kupe      = document.getElementById('inekKupe').value.trim();
+    let kupe = document.getElementById('inekKupe').value.trim();
     let laktasyon = document.getElementById('inekLaktasyon').value;
-    let sut       = document.getElementById('inekSut').value || 0;
-    let durum     = document.getElementById('inekDurum').value;
-
+    let sut = document.getElementById('inekSut').value || 0;
+    let durum = document.getElementById('inekDurum').value;
     if (!kupe) { alert("Sisteme kayıt için Küpe No veya İsim girmelisiniz!"); return; }
-
     let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-    let varMi   = inekler.findIndex(i => i.kupe === kupe);
-    if (varMi > -1) {
-        inekler[varMi] = { kupe, laktasyon, sut: parseFloat(sut), durum };
-    } else {
-        inekler.push({ id: Date.now(), kupe, laktasyon, sut: parseFloat(sut), durum });
-    }
-
+    let varMi = inekler.findIndex(i => i.kupe === kupe);
+    if (varMi > -1) { inekler[varMi] = { kupe, laktasyon, sut: parseFloat(sut), durum }; } 
+    else { inekler.push({ id: Date.now(), kupe, laktasyon, sut: parseFloat(sut), durum }); }
     localStorage.setItem(APP_PREFIX + 'inekler', JSON.stringify(inekler));
-    document.getElementById('inekKupe').value      = '';
-    document.getElementById('inekLaktasyon').value = '';
-    document.getElementById('inekSut').value       = '';
-    inekListele();
-    tohumlamaInekDoldur();
+    document.getElementById('inekKupe').value = ''; document.getElementById('inekLaktasyon').value = ''; document.getElementById('inekSut').value = '';
+    inekListele(); tohumlamaInekDoldur();
 }
-
 function inekListele() {
-    let inekler   = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-    let listeAlan = document.getElementById('inekListesiAlan');
-    let ozetAlan  = document.getElementById('sutOzetAlan');
-
-    if (inekler.length === 0) {
-        listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Sürüde henüz kayıtlı hayvan bulunmuyor.</p>';
-        ozetAlan.style.display = 'none';
-        return;
-    }
-
+    let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
+    let listeAlan = document.getElementById('inekListesiAlan'); let ozetAlan = document.getElementById('sutOzetAlan');
+    if (inekler.length === 0) { listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Sürüde henüz kayıtlı hayvan bulunmuyor.</p>'; ozetAlan.style.display = 'none'; return; }
     let toplamSut = 0, sagmalSayisi = 0;
-
-    let tablo = document.createElement('table');
-    tablo.className = 'saglik-tablo';
-    tablo.style.minWidth = '500px';
+    let tablo = document.createElement('table'); tablo.className = 'saglik-tablo'; tablo.style.minWidth = '500px';
     tablo.innerHTML = `<tr><th>Küpe / İsim</th><th>Laktasyon</th><th>Durum</th><th>Günlük Süt</th><th>İşlem</th></tr>`;
-
     inekler.forEach(inek => {
         if (inek.durum === 'Sağmal') { toplamSut += inek.sut; sagmalSayisi++; }
         let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${escapeHTML(inek.kupe)}</strong></td>
-            <td>${escapeHTML(inek.laktasyon || '-')}</td>
-            <td>${escapeHTML(inek.durum)}</td>
-            <td><strong style="color:#27ae60;">${inek.durum === 'Sağmal' ? escapeHTML(String(inek.sut)) + ' Lt' : '-'}</strong></td>
-            <td></td>
-        `;
-        let silBtn = document.createElement('button');
-        silBtn.type = 'button';
-        silBtn.className = 'btn-kucuk-sil';
-        silBtn.textContent = 'SİL';
+        tr.innerHTML = `<td><strong>${escapeHTML(inek.kupe)}</strong></td><td>${escapeHTML(inek.laktasyon || '-')}</td><td>${escapeHTML(inek.durum)}</td><td><strong style="color:#27ae60;">${inek.durum === 'Sağmal' ? escapeHTML(String(inek.sut)) + ' Lt' : '-'}</strong></td><td></td>`;
+        let silBtn = document.createElement('button'); silBtn.type = 'button'; silBtn.className = 'btn-kucuk-sil'; silBtn.textContent = 'SİL';
         silBtn.addEventListener('click', function() { inekSil(inek.kupe); });
-        tr.querySelector('td:last-child').appendChild(silBtn);
-        tablo.appendChild(tr);
+        tr.querySelector('td:last-child').appendChild(silBtn); tablo.appendChild(tr);
     });
-
-    listeAlan.innerHTML = '';
-    listeAlan.appendChild(tablo);
-
+    listeAlan.innerHTML = ''; listeAlan.appendChild(tablo);
     let ortalama = sagmalSayisi > 0 ? (toplamSut / sagmalSayisi).toFixed(1) : 0;
     ozetAlan.innerHTML = `<strong>Sürü Süt Özeti:</strong> Toplam ${inekler.length} Baş Hayvan | Sağmal: ${sagmalSayisi} Baş <br> <strong>Toplam Günlük Süt: <span style="color:#27ae60; font-size:16px;">${toplamSut} Litre</span></strong> | İnek Başı Ort: ${ortalama} Lt`;
     ozetAlan.style.display = 'block';
 }
-
 function inekSil(kupe) {
     if (confirm(kupe + " numaralı hayvanı sürüden silmek istediğinize emin misiniz?")) {
         let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
         inekler = inekler.filter(i => i.kupe !== kupe);
         localStorage.setItem(APP_PREFIX + 'inekler', JSON.stringify(inekler));
-        inekListele();
-        tohumlamaInekDoldur();
+        inekListele(); tohumlamaInekDoldur();
     }
 }
-
-// ─── DAMIZLIK: TOHUMLAMA ─────────────────────────────────────────────────
 function tohumlamaInekDoldur() {
     let inekler = JSON.parse(localStorage.getItem(APP_PREFIX + 'inekler')) || [];
-    let select  = document.getElementById('tohumlamaInekSec');
+    let select = document.getElementById('tohumlamaInekSec');
     if (!select) return;
     select.innerHTML = '';
     inekler.forEach(inek => {
-        let opt  = document.createElement('option');
-        opt.value = inek.kupe;
-        opt.text  = inek.kupe + (inek.durum === 'Sağmal' ? ' (Sağmal)' : ' (Kuru/Düve)');
-        select.appendChild(opt);
+        let opt = document.createElement('option'); opt.value = inek.kupe; opt.text = inek.kupe + (inek.durum === 'Sağmal' ? ' (Sağmal)' : ' (Kuru/Düve)'); select.appendChild(opt);
     });
 }
-
 function tohumlamaEkle() {
-    let kupe   = document.getElementById('tohumlamaInekSec').value;
-    let tarih  = document.getElementById('tohumTarihi').value;
+    let kupe = document.getElementById('tohumlamaInekSec').value;
+    let tarih = document.getElementById('tohumTarihi').value;
     let sperma = document.getElementById('spermaKodu').value.trim();
-
     if (!kupe || !tarih) { alert("Lütfen inek seçip tohumlama tarihini giriniz!"); return; }
-
     let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
     kayitlar.push({ id: Date.now(), kupe, tarih, sperma });
     localStorage.setItem(APP_PREFIX + 'tohumlama', JSON.stringify(kayitlar));
     tohumlamaListele();
 }
-
 function tohumlamaListele() {
-    let kayitlar  = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
+    let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
     let listeAlan = document.getElementById('tohumlamaListesiAlan');
-
-    if (kayitlar.length === 0) {
-        listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Kayıtlı tohumlama bulunmuyor.</p>';
-        return;
-    }
-
+    if (kayitlar.length === 0) { listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Kayıtlı tohumlama bulunmuyor.</p>'; return; }
     kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-
-    let bugun = new Date();
-    bugun.setHours(0,0,0,0);
-
-    let tablo = document.createElement('table');
-    tablo.className = 'saglik-tablo';
-    tablo.style.minWidth = '600px';
+    let bugun = new Date(); bugun.setHours(0,0,0,0);
+    let tablo = document.createElement('table'); tablo.className = 'saglik-tablo'; tablo.style.minWidth = '600px';
     tablo.innerHTML = `<tr><th>Küpe</th><th>Tohumlama</th><th>Boğa Kodu</th><th>Tahmini Doğum</th><th>Durum / Kalan Süre</th><th>İşlem</th></tr>`;
-
     kayitlar.forEach(k => {
-        let tTarih     = new Date(k.tarih);
-        let dogumTarih = new Date(tTarih);
-        dogumTarih.setDate(dogumTarih.getDate() + 283);
-
-        let kalanGun   = Math.round((dogumTarih - bugun) / (1000 * 60 * 60 * 24));
-        let durumMetni = "";
-        let bgRenk     = "";
-
-        if (kalanGun < 0) {
-            durumMetni = `<span style="color:#e74c3c; font-weight:bold;">Doğum Gerçekleşmiş Olmalı</span>`;
-        } else if (kalanGun <= 60) {
-            durumMetni = `<span style="color:#d35400; font-weight:bold;">Kuruya Çıkar! (Kalan: ${kalanGun} Gün)</span>`;
-            bgRenk = "background-color: #fdf2e9;";
-        } else {
-            durumMetni = `<span style="color:#2980b9;">Gebelik Devam (Kalan: ${kalanGun} Gün)</span>`;
-        }
-
-        let tr = document.createElement('tr');
-        tr.style.cssText = bgRenk;
-        tr.innerHTML = `
-            <td><strong>${escapeHTML(k.kupe)}</strong></td>
-            <td>${tTarih.toLocaleDateString('tr-TR')}</td>
-            <td>${escapeHTML(k.sperma || '-')}</td>
-            <td style="font-weight:bold; color:#8e44ad;">${dogumTarih.toLocaleDateString('tr-TR')}</td>
-            <td>${durumMetni}</td>
-            <td></td>
-        `;
-        let silBtn = document.createElement('button');
-        silBtn.type = 'button';
-        silBtn.className = 'btn-kucuk-sil';
-        silBtn.textContent = 'SİL';
+        let tTarih = new Date(k.tarih); let dogumTarih = new Date(tTarih); dogumTarih.setDate(dogumTarih.getDate() + 283);
+        let kalanGun = Math.round((dogumTarih - bugun) / (1000 * 60 * 60 * 24));
+        let durumMetni = "", bgRenk = "";
+        if (kalanGun < 0) { durumMetni = `<span style="color:#e74c3c; font-weight:bold;">Doğum Gerçekleşmiş Olmalı</span>`; } 
+        else if (kalanGun <= 60) { durumMetni = `<span style="color:#d35400; font-weight:bold;">Kuruya Çıkar! (Kalan: ${kalanGun} Gün)</span>`; bgRenk = "background-color: #fdf2e9;"; } 
+        else { durumMetni = `<span style="color:#2980b9;">Gebelik Devam (Kalan: ${kalanGun} Gün)</span>`; }
+        let tr = document.createElement('tr'); tr.style.cssText = bgRenk;
+        tr.innerHTML = `<td><strong>${escapeHTML(k.kupe)}</strong></td><td>${tTarih.toLocaleDateString('tr-TR')}</td><td>${escapeHTML(k.sperma || '-')}</td><td style="font-weight:bold; color:#8e44ad;">${dogumTarih.toLocaleDateString('tr-TR')}</td><td>${durumMetni}</td><td></td>`;
+        let silBtn = document.createElement('button'); silBtn.type = 'button'; silBtn.className = 'btn-kucuk-sil'; silBtn.textContent = 'SİL';
         silBtn.addEventListener('click', function() { tohumlamaSil(k.id); });
-        tr.querySelector('td:last-child').appendChild(silBtn);
-        tablo.appendChild(tr);
+        tr.querySelector('td:last-child').appendChild(silBtn); tablo.appendChild(tr);
     });
-
-    listeAlan.innerHTML = '';
-    listeAlan.appendChild(tablo);
+    listeAlan.innerHTML = ''; listeAlan.appendChild(tablo);
 }
-
 function tohumlamaSil(id) {
     if (confirm("Bu tohumlama kaydını silmek istediğinize emin misiniz?")) {
         let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'tohumlama')) || [];
@@ -1232,255 +980,356 @@ function tohumlamaSil(id) {
         tohumlamaListele();
     }
 }
-
-// ─── GİDER TAKİBİ ───────────────────────────────────────────────────────
 function giderEkle() {
-    let tarih = document.getElementById('giderTarih').value;
-    let kategori = document.getElementById('giderKategori').value;
-    let aciklama = document.getElementById('giderAciklama').value.trim();
-    let tutar = parseFloat(document.getElementById('giderTutar').value);
-
-    if (!tarih || !aciklama || isNaN(tutar) || tutar <= 0) {
-        alert("Lütfen Tarih, Açıklama ve geçerli bir Tutar giriniz!");
-        return;
-    }
-
+    let tarih = document.getElementById('giderTarih').value; let kategori = document.getElementById('giderKategori').value;
+    let aciklama = document.getElementById('giderAciklama').value.trim(); let tutar = parseFloat(document.getElementById('giderTutar').value);
+    if (!tarih || !aciklama || isNaN(tutar) || tutar <= 0) { alert("Lütfen Tarih, Açıklama ve geçerli bir Tutar giriniz!"); return; }
     let giderler = JSON.parse(localStorage.getItem(APP_PREFIX + 'giderler')) || [];
     giderler.push({ id: Date.now(), tarih, kategori, aciklama, tutar });
     localStorage.setItem(APP_PREFIX + 'giderler', JSON.stringify(giderler));
-
-    document.getElementById('giderAciklama').value = '';
-    document.getElementById('giderTutar').value = '';
-    giderListele();
+    document.getElementById('giderAciklama').value = ''; document.getElementById('giderTutar').value = ''; giderListele();
 }
-
 function giderListele() {
     let giderler = JSON.parse(localStorage.getItem(APP_PREFIX + 'giderler')) || [];
-    let listeAlan = document.getElementById('giderListesi');
-    let ozetAlan = document.getElementById('giderOzetAlani');
-
-    if (giderler.length === 0) {
-        listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kaydedilmiş bir gider bulunmuyor.</p>';
-        ozetAlan.style.display = 'none';
-        return;
-    }
-
+    let listeAlan = document.getElementById('giderListesi'); let ozetAlan = document.getElementById('giderOzetAlani');
+    if (giderler.length === 0) { listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kaydedilmiş bir gider bulunmuyor.</p>'; ozetAlan.style.display = 'none'; return; }
     giderler.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-
     let toplamGider = 0;
-    let tablo = document.createElement('table');
-    tablo.className = 'saglik-tablo';
-    tablo.style.minWidth = '500px';
+    let tablo = document.createElement('table'); tablo.className = 'saglik-tablo'; tablo.style.minWidth = '500px';
     tablo.innerHTML = `<tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th><th>İşlem</th></tr>`;
-
     giderler.forEach(g => {
-        toplamGider += g.tutar;
-        let tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${new Date(g.tarih).toLocaleDateString('tr-TR')}</td>
-            <td><strong>${escapeHTML(g.kategori)}</strong></td>
-            <td>${escapeHTML(g.aciklama)}</td>
-            <td style="color:#d35400; font-weight:bold;">${g.tutar.toLocaleString('tr-TR')} ₺</td>
-            <td></td>
-        `;
-        let silBtn = document.createElement('button');
-        silBtn.type = 'button';
-        silBtn.className = 'btn-kucuk-sil';
-        silBtn.textContent = 'SİL';
+        toplamGider += g.tutar; let tr = document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(g.tarih).toLocaleDateString('tr-TR')}</td><td><strong>${escapeHTML(g.kategori)}</strong></td><td>${escapeHTML(g.aciklama)}</td><td style="color:#d35400; font-weight:bold;">${g.tutar.toLocaleString('tr-TR')} ₺</td><td></td>`;
+        let silBtn = document.createElement('button'); silBtn.type = 'button'; silBtn.className = 'btn-kucuk-sil'; silBtn.textContent = 'SİL';
         silBtn.addEventListener('click', function() { giderSil(g.id); });
-        tr.querySelector('td:last-child').appendChild(silBtn);
-        tablo.appendChild(tr);
+        tr.querySelector('td:last-child').appendChild(silBtn); tablo.appendChild(tr);
     });
-
-    listeAlan.innerHTML = '';
-    listeAlan.appendChild(tablo);
-
-    ozetAlan.innerHTML = `<strong>Çiftlik Toplam Gideri:</strong> <span style="color:#c0392b; font-size:18px;">${toplamGider.toLocaleString('tr-TR')} ₺</span>`;
-    ozetAlan.style.display = 'block';
+    listeAlan.innerHTML = ''; listeAlan.appendChild(tablo);
+    ozetAlan.innerHTML = `<strong>Çiftlik Toplam Gideri:</strong> <span style="color:#c0392b; font-size:18px;">${toplamGider.toLocaleString('tr-TR')} ₺</span>`; ozetAlan.style.display = 'block';
 }
-
 function giderSil(id) {
     if (confirm("Bu gider kalemini silmek istediğinize emin misiniz?")) {
         let giderler = JSON.parse(localStorage.getItem(APP_PREFIX + 'giderler')) || [];
-        giderler = giderler.filter(g => g.id !== id);
-        localStorage.setItem(APP_PREFIX + 'giderler', JSON.stringify(giderler));
-        giderListele();
+        giderler = giderler.filter(g => g.id !== id); localStorage.setItem(APP_PREFIX + 'giderler', JSON.stringify(giderler)); giderListele();
     }
 }
-
-// ─── DAMIZLIK RASYON HESAPLAMA ──────────────────────────────────────────
 function damizlikRasyonHesapla() {
     let fSutYemi = (parseFloat(document.getElementById('fiyatSutYemi').value) || 0) / 50; 
     let fSilaj = (parseFloat(document.getElementById('fiyatSilaj').value) || 0) / 1000; 
     let fYonca = parseFloat(document.getElementById('fiyatYonca').value) || 0;
     let fArpa = parseFloat(document.getElementById('fiyatArpaDamizlik').value) || 0;
     let fSaman = parseFloat(document.getElementById('fiyatSamanDamizlik').value) || 0;
-
     let s = parseFloat(document.getElementById('d_sayi').value) || 0;
     let ortSut = parseFloat(document.getElementById('d_ortSut').value) || 0;
-
     let mSutYemi = parseFloat(document.getElementById('d_sutYemi').value) || 0;
     let mSilaj = parseFloat(document.getElementById('d_silaj').value) || 0;
     let mYonca = parseFloat(document.getElementById('d_yonca').value) || 0;
     let mArpa = parseFloat(document.getElementById('d_arpa').value) || 0;
     let mSaman = parseFloat(document.getElementById('d_saman').value) || 0;
-
     let hbMaliyet = (mSutYemi * fSutYemi) + (mSilaj * fSilaj) + (mYonca * fYonca) + (mArpa * fArpa) + (mSaman * fSaman);
     let suruMaliyet = hbMaliyet * s;
     let sutMaliyeti = (ortSut > 0) ? (hbMaliyet / ortSut) : 0;
-
     let sonucDiv = document.getElementById('sonuc_damizlikRasyon');
     if(s > 0 || hbMaliyet > 0) {
-        sonucDiv.innerHTML = `
-            <div><strong>Hayvan Başı Günlük Maliyet:</strong> <span style="color:#c0392b; font-size:16px;">${hbMaliyet.toFixed(2)} TL</span></div>
-            <div><strong>Sürü Günlük Rasyon Maliyeti:</strong> ${suruMaliyet.toFixed(2)} TL</div>
-            <div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc;">
-                <strong>1 Litre Sütün Yem Maliyeti:</strong> <span style="color:#27ae60; font-size:16px;">${sutMaliyeti.toFixed(2)} TL</span>
-            </div>
-        `;
+        sonucDiv.innerHTML = `<div><strong>Hayvan Başı Günlük Maliyet:</strong> <span style="color:#c0392b; font-size:16px;">${hbMaliyet.toFixed(2)} TL</span></div><div><strong>Sürü Günlük Rasyon Maliyeti:</strong> ${suruMaliyet.toFixed(2)} TL</div><div style="margin-top:8px; padding-top:8px; border-top:1px dashed #ccc;"><strong>1 Litre Sütün Yem Maliyeti:</strong> <span style="color:#27ae60; font-size:16px;">${sutMaliyeti.toFixed(2)} TL</span></div>`;
         sonucDiv.style.display = 'block';
-    } else {
-        sonucDiv.style.display = 'none';
-    }
+    } else { sonucDiv.style.display = 'none'; }
 }
-
-// ─── SÜT SATIŞ VE GELİR TAKİBİ ──────────────────────────────────────────
 function sutSatisKaydet() {
     let tarih = document.getElementById('sutSatisTarih').value;
     let toplamLt = parseFloat(document.getElementById('sutSatisToplam').value) || 0;
-    let m_lt = parseFloat(document.getElementById('sutMandiraLt').value) || 0;
-    let m_fiyat = parseFloat(document.getElementById('sutMandiraFiyat').value) || 0;
-    let p_lt = parseFloat(document.getElementById('sutPerakendeLt').value) || 0;
-    let p_fiyat = parseFloat(document.getElementById('sutPerakendeFiyat').value) || 0;
-
-    if(!tarih || toplamLt <= 0) {
-        alert("Lütfen tarih ve günlük toplam üretilen süt miktarını giriniz."); 
-        return;
-    }
-
-    let m_gelir = m_lt * m_fiyat;
-    let p_gelir = p_lt * p_fiyat;
-    let toplamGelir = m_gelir + p_gelir;
-    let zayiat = toplamLt - (m_lt + p_lt);
-
+    let m_lt = parseFloat(document.getElementById('sutMandiraLt').value) || 0; let m_fiyat = parseFloat(document.getElementById('sutMandiraFiyat').value) || 0;
+    let p_lt = parseFloat(document.getElementById('sutPerakendeLt').value) || 0; let p_fiyat = parseFloat(document.getElementById('sutPerakendeFiyat').value) || 0;
+    if(!tarih || toplamLt <= 0) { alert("Lütfen tarih ve günlük toplam üretilen süt miktarını giriniz."); return; }
+    let m_gelir = m_lt * m_fiyat; let p_gelir = p_lt * p_fiyat; let toplamGelir = m_gelir + p_gelir; let zayiat = toplamLt - (m_lt + p_lt);
     let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'sutSatis')) || [];
-    kayitlar.push({
-        id: Date.now(), tarih, toplamLt, m_lt, m_fiyat, m_gelir, p_lt, p_fiyat, p_gelir, toplamGelir, zayiat
-    });
+    kayitlar.push({ id: Date.now(), tarih, toplamLt, m_lt, m_fiyat, m_gelir, p_lt, p_fiyat, p_gelir, toplamGelir, zayiat });
     localStorage.setItem(APP_PREFIX + 'sutSatis', JSON.stringify(kayitlar));
-
-    document.getElementById('sutSatisToplam').value = '';
-    document.getElementById('sutMandiraLt').value = '';
-    document.getElementById('sutPerakendeLt').value = '';
-    sutSatisListele();
+    document.getElementById('sutSatisToplam').value = ''; document.getElementById('sutMandiraLt').value = ''; document.getElementById('sutPerakendeLt').value = ''; sutSatisListele();
 }
-
 function sutSatisListele() {
     let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'sutSatis')) || [];
-    let listeAlan = document.getElementById('sutSatisListesi');
-    let ozetAlan = document.getElementById('sutSatisOzetAlani');
+    let listeAlan = document.getElementById('sutSatisListesi'); let ozetAlan = document.getElementById('sutSatisOzetAlani');
+    if (kayitlar.length === 0) { listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kaydedilmiş bir süt satışı bulunmuyor.</p>'; ozetAlan.style.display = 'none'; return; }
+    kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+    let genelToplamGelir = 0, genelToplamLt = 0;
+    let tablo = document.createElement('table'); tablo.className = 'saglik-tablo'; tablo.style.minWidth = '650px';
+    tablo.innerHTML = `<tr><th>Tarih</th><th>Üretim (Lt)</th><th>Mandıra Geliri</th><th>Perakende Geliri</th><th>Toplam Gelir</th><th>İşlem</th></tr>`;
+    kayitlar.forEach(k => {
+        genelToplamGelir += k.toplamGelir; genelToplamLt += k.toplamLt;
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td>${new Date(k.tarih).toLocaleDateString('tr-TR')}</td><td><strong>${k.toplamLt} Lt</strong><br><span style="font-size:10px; color:#7f8c8d;">Zayiat: ${k.zayiat} Lt</span></td><td>${k.m_gelir.toLocaleString('tr-TR')} ₺ <br><span style="font-size:10px; color:#7f8c8d;">(${k.m_lt} Lt x ${k.m_fiyat} ₺)</span></td><td>${k.p_gelir.toLocaleString('tr-TR')} ₺ <br><span style="font-size:10px; color:#7f8c8d;">(${k.p_lt} Lt x ${k.p_fiyat} ₺)</span></td><td style="color:#27ae60; font-weight:bold;">${k.toplamGelir.toLocaleString('tr-TR')} ₺</td><td></td>`;
+        let silBtn = document.createElement('button'); silBtn.type = 'button'; silBtn.className = 'btn-kucuk-sil'; silBtn.textContent = 'SİL';
+        silBtn.addEventListener('click', function() { sutSatisSil(k.id); });
+        tr.querySelector('td:last-child').appendChild(silBtn); tablo.appendChild(tr);
+    });
+    listeAlan.innerHTML = ''; listeAlan.appendChild(tablo);
+    ozetAlan.innerHTML = `<strong>Kayıtlı Toplam Süt Satış Geliri:</strong> <span style="color:#27ae60; font-size:18px;">${genelToplamGelir.toLocaleString('tr-TR')} ₺</span> <br> <span style="font-size:12px; color:#7f8c8d;">(Toplam İşlenen Süt: ${genelToplamLt} Lt)</span>`;
+    ozetAlan.style.display = 'block';
+}
+function sutSatisSil(id) {
+    if (confirm("Bu süt satış kaydını silmek istediğinize emin misiniz?")) {
+        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'sutSatis')) || [];
+        kayitlar = kayitlar.filter(k => k.id !== id); localStorage.setItem(APP_PREFIX + 'sutSatis', JSON.stringify(kayitlar)); sutSatisListele();
+    }
+}
+function sayaclariCalistir() {
+    let bugun = new Date();
+    let gunStr = bugun.toISOString().split('T')[0]; 
+    let ayStr = gunStr.substring(0, 7); 
+    let d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + 4 - (d.getDay()||7));
+    let yilbasi = new Date(d.getFullYear(),0,1); let haftaStr = d.getFullYear() + '-W' + Math.ceil((((d - yilbasi)/86400000)+1)/7);
+
+    if (localStorage.getItem('sayac_sonGun') !== gunStr) { localStorage.setItem('sayac_gunluk', '0'); localStorage.setItem('sayac_sonGun', gunStr); }
+    if (localStorage.getItem('sayac_sonHafta') !== haftaStr) { localStorage.setItem('sayac_haftalik', '0'); localStorage.setItem('sayac_sonHafta', haftaStr); }
+    if (localStorage.getItem('sayac_sonAy') !== ayStr) { localStorage.setItem('sayac_aylik', '0'); localStorage.setItem('sayac_sonAy', ayStr); }
+
+    let tGun = parseInt(localStorage.getItem('sayac_gunluk')) || 0; let tHafta = parseInt(localStorage.getItem('sayac_haftalik')) || 0;
+    let tAy = parseInt(localStorage.getItem('sayac_aylik')) || 0; let tTop = parseInt(localStorage.getItem('sayac_toplam')) || 0;
+
+    if (!sessionStorage.getItem('oturumSayildi')) {
+        tGun++; tHafta++; tAy++; tTop++;
+        localStorage.setItem('sayac_gunluk', tGun); localStorage.setItem('sayac_haftalik', tHafta);
+        localStorage.setItem('sayac_aylik', tAy); localStorage.setItem('sayac_toplam', tTop);
+        sessionStorage.setItem('oturumSayildi', 'true');
+    }
+    if(document.getElementById('sayacGunluk')) document.getElementById('sayacGunluk').innerText = tGun;
+    if(document.getElementById('sayacHaftalik')) document.getElementById('sayacHaftalik').innerText = tHafta;
+    if(document.getElementById('sayacAylik')) document.getElementById('sayacAylik').innerText = tAy;
+    if(document.getElementById('sayacToplam')) document.getElementById('sayacToplam').innerText = tTop;
+}
+
+
+// ─── KESİM & GEÇMİŞ MODÜLÜ İŞLEMLERİ ───────────────────────────────────────
+function patokuKesimeGonder(pId) {
+    let s = parseFloat(document.getElementById('p' + pId + '_sayi').value) || 0;
+    if(s <= 0) { alert("Bu patokta kayıtlı hayvan bulunmuyor."); return; }
+
+    let ckg = parseFloat(document.getElementById('p' + pId + '_kg').value) || 0;
+    let karkasRandiman = parseFloat(document.getElementById('p' + pId + '_karkasRandiman').value) || 55;
+    let etFiyati = parseFloat(document.getElementById('guncelEtFiyati').value) || 0;
+    
+    let tahminiKarkas = ckg * (karkasRandiman / 100);
+    
+    // Güncel maliyeti domdan çekiyoruz (Gizli attribute olarak finans sonucunda saklanıyordu)
+    let finansSonucDiv = document.getElementById('finans_sonuc_p' + pId);
+    let cMaliyet = 0;
+    if(finansSonucDiv && finansSonucDiv.getAttribute('data-guncel-maliyet')) {
+        cMaliyet = parseFloat(finansSonucDiv.getAttribute('data-guncel-maliyet'));
+    } else {
+        let aFiyat = parseFloat(document.getElementById('p' + pId + '_alisFiyati').value) || 0;
+        cMaliyet = aFiyat; // Yem hesaplanamamışsa sadece alış fiyatını al
+    }
+    let toplamMaliyet = cMaliyet * s;
+
+    document.getElementById('kesimModal_pId').value = pId;
+    document.getElementById('kesimModal_islemTipi').value = 'patok_gonder';
+    document.getElementById('kesimModal_hedefKayitId').value = '';
+    
+    document.getElementById('kesimModal_baslik').innerText = 'Patok ' + pId + ' Kesime Gönder';
+    document.getElementById('kesimModal_isim').value = 'Patok ' + pId + ' Toplu Kesim';
+    document.getElementById('alan_isim').style.display = 'block';
+    document.getElementById('kesimModal_tarih').value = new Date().toISOString().split('T')[0];
+    document.getElementById('kesimModal_sayi').value = s;
+    document.getElementById('kesimModal_canli').value = ckg.toFixed(1);
+    document.getElementById('kesimModal_karkas').value = tahminiKarkas.toFixed(1);
+    document.getElementById('kesimModal_fiyat').value = etFiyati;
+    document.getElementById('kesimModal_maliyet').value = Math.round(toplamMaliyet);
+
+    document.getElementById('lbl_sayi').innerText = "Hayvan Sayısı";
+    document.getElementById('lbl_maliyet').innerHTML = 'Toplam Maliyet (TL) <span style="font-size:10px; color:#7f8c8d;">(Mevcut Alış + Yem Gideri)</span>';
+
+    document.getElementById('kesimModal').style.display = 'flex';
+}
+
+function yeniBagimsizKesimEkle() {
+    document.getElementById('kesimModal_pId').value = '';
+    document.getElementById('kesimModal_islemTipi').value = 'yeni';
+    document.getElementById('kesimModal_hedefKayitId').value = '';
+    
+    document.getElementById('kesimModal_baslik').innerText = 'Geçmiş Kesim Kaydı Ekle';
+    document.getElementById('alan_isim').style.display = 'block';
+    document.getElementById('kesimModal_isim').value = 'Bağımsız Kesim';
+    document.getElementById('kesimModal_tarih').value = new Date().toISOString().split('T')[0];
+    
+    ['sayi','canli','karkas','fiyat','maliyet'].forEach(id => document.getElementById('kesimModal_'+id).value = '');
+    
+    document.getElementById('lbl_sayi').innerText = "Hayvan Sayısı";
+    document.getElementById('lbl_maliyet').innerHTML = 'Toplam Maliyet (TL) <span style="font-size:10px; color:#7f8c8d;">(Zarar/Kar hesabı için)</span>';
+
+    document.getElementById('kesimModal').style.display = 'flex';
+}
+
+function kesimeHayvanEkle(kayitId) {
+    document.getElementById('kesimModal_islemTipi').value = 'ekle';
+    document.getElementById('kesimModal_hedefKayitId').value = kayitId;
+    
+    document.getElementById('kesimModal_baslik').innerText = 'Kesilen Gruba Ek Hayvan Dahil Et';
+    document.getElementById('alan_isim').style.display = 'none';
+    
+    let bugunFormat = new Date().toISOString().split('T')[0];
+    document.getElementById('kesimModal_tarih').value = bugunFormat;
+    ['sayi','canli','karkas','fiyat','maliyet'].forEach(id => document.getElementById('kesimModal_'+id).value = '');
+
+    document.getElementById('lbl_sayi').innerText = "Eklenecek Hayvan Sayısı";
+    document.getElementById('lbl_maliyet').innerHTML = 'Bu Hayvanların Ek Maliyeti (TL)';
+
+    document.getElementById('kesimModal').style.display = 'flex';
+}
+
+function kesimModalKaydet() {
+    let islemTipi = document.getElementById('kesimModal_islemTipi').value;
+    let hedefId = document.getElementById('kesimModal_hedefKayitId').value;
+    let pId = document.getElementById('kesimModal_pId').value;
+
+    let isim = document.getElementById('kesimModal_isim').value || "İsimsiz Kesim";
+    let tarih = document.getElementById('kesimModal_tarih').value;
+    let sayi = parseFloat(document.getElementById('kesimModal_sayi').value) || 0;
+    let fiyat = parseFloat(document.getElementById('kesimModal_fiyat').value) || 0;
+    let canli = parseFloat(document.getElementById('kesimModal_canli').value) || 0;
+    let karkas = parseFloat(document.getElementById('kesimModal_karkas').value) || 0;
+    let maliyet = parseFloat(document.getElementById('kesimModal_maliyet').value) || 0;
+
+    if(sayi <= 0 || karkas <= 0 || fiyat <= 0) { alert("Lütfen sayı, karkas ağırlığı ve fiyat bilgilerini eksiksiz giriniz."); return; }
+
+    let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'kesimler')) || [];
+    let toplamKarkas = sayi * karkas;
+    let ciro = toplamKarkas * fiyat;
+    let kar = ciro - maliyet;
+
+    if (islemTipi === 'yeni' || islemTipi === 'patok_gonder') {
+        kayitlar.push({ id: Date.now(), isim, tarih, sayi, canli, karkas, fiyat, maliyet, toplamKarkas, ciro, kar });
+
+        if (islemTipi === 'patok_gonder' && pId) {
+            let aktifCheckbox = document.getElementById('p'+pId+'_aktif');
+            if(aktifCheckbox) { aktifCheckbox.checked = false; localStorage.setItem(APP_PREFIX + 'p' + pId + '_aktif', 'false'); }
+            
+            let sayiInput = document.getElementById('p'+pId+'_sayi');
+            if(sayiInput) { sayiInput.value = 0; localStorage.setItem(APP_PREFIX + 'p' + pId + '_sayi', 0); }
+            
+            hesapla(); // Veriyi sıfırladıktan sonra panoyu yenile
+            alert(`Tebrikler! Patok ${pId} başarıyla kesime gönderildi. \n(Not: Patok inaktif duruma alındı ve hayvan sayısı sıfırlandı.)`);
+        } else {
+            alert("Kesim kaydı başarıyla eklendi!");
+        }
+    } else if (islemTipi === 'ekle') {
+        let r = kayitlar.find(k => String(k.id) === String(hedefId));
+        if(r) {
+            let yeniSayi = r.sayi + sayi;
+            let yeniMaliyet = r.maliyet + maliyet;
+            let yeniToplamKarkas = r.toplamKarkas + toplamKarkas;
+            let yeniCiro = r.ciro + ciro;
+
+            r.sayi = yeniSayi;
+            r.maliyet = yeniMaliyet;
+            r.toplamKarkas = yeniToplamKarkas;
+            r.ciro = yeniCiro;
+            r.kar = yeniCiro - yeniMaliyet;
+            
+            r.karkas = parseFloat((yeniToplamKarkas / yeniSayi).toFixed(1));
+            if(r.canli > 0) r.canli = parseFloat((((r.canli * (r.sayi - sayi)) + (canli * sayi)) / yeniSayi).toFixed(1));
+            r.fiyat = parseFloat((yeniCiro / yeniToplamKarkas).toFixed(2));
+            
+            r.tarih = tarih; // Son ekleme tarihini baz al
+            alert("Hayvanlar gruba dahil edildi. Ortalamalar yeniden hesaplandı.");
+        }
+    }
+
+    localStorage.setItem(APP_PREFIX + 'kesimler', JSON.stringify(kayitlar));
+    document.getElementById('kesimModal').style.display = 'none';
+    kesimListele();
+}
+
+function kesimListele() {
+    let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'kesimler')) || [];
+    let listeAlan = document.getElementById('kesimListesiAlani');
+    let ozetAlan = document.getElementById('kesimOzetAlani');
 
     if (kayitlar.length === 0) {
-        listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Henüz kaydedilmiş bir süt satışı bulunmuyor.</p>';
+        listeAlan.innerHTML = '<p style="text-align:center; color:#7f8c8d; font-size:13px;">Sistemde henüz kayıtlı bir kesim bulunmuyor.</p>';
         ozetAlan.style.display = 'none';
         return;
     }
 
     kayitlar.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
 
-    let genelToplamGelir = 0;
-    let genelToplamLt = 0;
-    
+    let toplamCiroHesabi = 0;
+    let toplamKarHesabi = 0;
+    let toplamHayvan = 0;
+
     let tablo = document.createElement('table');
     tablo.className = 'saglik-tablo';
-    tablo.style.minWidth = '650px';
-    tablo.innerHTML = `<tr><th>Tarih</th><th>Üretim (Lt)</th><th>Mandıra Geliri</th><th>Perakende Geliri</th><th>Toplam Gelir</th><th>İşlem</th></tr>`;
+    tablo.style.minWidth = '800px';
+    tablo.innerHTML = `<tr><th>Grup Adı</th><th>Tarih</th><th>Sayı & Kilo</th><th>Finansal Sonuç</th><th>İşlemler</th></tr>`;
 
     kayitlar.forEach(k => {
-        genelToplamGelir += k.toplamGelir;
-        genelToplamLt += k.toplamLt;
-        
+        toplamCiroHesabi += k.ciro;
+        toplamKarHesabi += k.kar;
+        toplamHayvan += k.sayi;
+
+        let karRenk = k.kar >= 0 ? '#27ae60' : '#c0392b';
+        let isaret = k.kar >= 0 ? '+' : '';
+
         let tr = document.createElement('tr');
         tr.innerHTML = `
+            <td><strong>${escapeHTML(k.isim)}</strong></td>
             <td>${new Date(k.tarih).toLocaleDateString('tr-TR')}</td>
-            <td><strong>${k.toplamLt} Lt</strong><br><span style="font-size:10px; color:#7f8c8d;">Zayiat: ${k.zayiat} Lt</span></td>
-            <td>${k.m_gelir.toLocaleString('tr-TR')} ₺ <br><span style="font-size:10px; color:#7f8c8d;">(${k.m_lt} Lt x ${k.m_fiyat} ₺)</span></td>
-            <td>${k.p_gelir.toLocaleString('tr-TR')} ₺ <br><span style="font-size:10px; color:#7f8c8d;">(${k.p_lt} Lt x ${k.p_fiyat} ₺)</span></td>
-            <td style="color:#27ae60; font-weight:bold;">${k.toplamGelir.toLocaleString('tr-TR')} ₺</td>
-            <td></td>
+            <td style="line-height:1.4;">
+                <span style="color:#2980b9; font-weight:bold;">${k.sayi} Baş</span><br>
+                <span style="font-size:11px; color:#7f8c8d;">Ort. Karkas: ${k.karkas.toFixed(1)} kg</span><br>
+                <span style="font-size:11px; color:#7f8c8d;">Fiyat: ${k.fiyat.toLocaleString('tr-TR')} ₺/kg</span>
+            </td>
+            <td style="line-height:1.4;">
+                <span style="font-size:11px;">Ciro: ${k.ciro.toLocaleString('tr-TR')} ₺</span><br>
+                <span style="font-weight:bold; color:${karRenk}; font-size:13px;">Net Kâr: ${isaret}${k.kar.toLocaleString('tr-TR')} ₺</span>
+            </td>
+            <td style="display:flex; flex-direction:column; gap:5px;"></td>
         `;
+
+        let tdIslem = tr.querySelector('td:last-child');
+        
+        let ekleBtn = document.createElement('button');
+        ekleBtn.type = 'button';
+        ekleBtn.className = 'btn-kucuk-sil';
+        ekleBtn.style.backgroundColor = '#8e44ad';
+        ekleBtn.textContent = '+ HAYVAN EKLE';
+        ekleBtn.addEventListener('click', function() { kesimeHayvanEkle(k.id); });
+        tdIslem.appendChild(ekleBtn);
+
         let silBtn = document.createElement('button');
         silBtn.type = 'button';
         silBtn.className = 'btn-kucuk-sil';
-        silBtn.textContent = 'SİL';
-        silBtn.addEventListener('click', function() { sutSatisSil(k.id); });
-        tr.querySelector('td:last-child').appendChild(silBtn);
+        silBtn.textContent = 'KAYDI SİL';
+        silBtn.addEventListener('click', function() { kesimSil(k.id); });
+        tdIslem.appendChild(silBtn);
+
         tablo.appendChild(tr);
     });
 
     listeAlan.innerHTML = '';
     listeAlan.appendChild(tablo);
 
-    ozetAlan.innerHTML = `<strong>Kayıtlı Toplam Süt Satış Geliri:</strong> <span style="color:#27ae60; font-size:18px;">${genelToplamGelir.toLocaleString('tr-TR')} ₺</span> <br> <span style="font-size:12px; color:#7f8c8d;">(Toplam İşlenen Süt: ${genelToplamLt} Lt)</span>`;
+    let kRenk = toplamKarHesabi >= 0 ? '#27ae60' : '#c0392b';
+    ozetAlan.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <strong>Toplam Kesilen:</strong> <span style="color:#2980b9;">${toplamHayvan} Baş</span><br>
+                <strong>Toplam Elde Edilen Ciro:</strong> ${toplamCiroHesabi.toLocaleString('tr-TR')} ₺
+            </div>
+            <div style="text-align:right;">
+                <strong>TOPLAM NET KÂR:</strong><br>
+                <span style="color:${kRenk}; font-size:20px; font-weight:bold;">${toplamKarHesabi >= 0 ? '+' : ''}${toplamKarHesabi.toLocaleString('tr-TR')} ₺</span>
+            </div>
+        </div>
+    `;
     ozetAlan.style.display = 'block';
 }
 
-function sutSatisSil(id) {
-    if (confirm("Bu süt satış kaydını silmek istediğinize emin misiniz?")) {
-        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'sutSatis')) || [];
+function kesimSil(id) {
+    if (confirm("Bu kesim kaydını silmek istediğinize emin misiniz? Bütün kâr/zarar raporu etkilenecektir.")) {
+        let kayitlar = JSON.parse(localStorage.getItem(APP_PREFIX + 'kesimler')) || [];
         kayitlar = kayitlar.filter(k => k.id !== id);
-        localStorage.setItem(APP_PREFIX + 'sutSatis', JSON.stringify(kayitlar));
-        sutSatisListele();
+        localStorage.setItem(APP_PREFIX + 'kesimler', JSON.stringify(kayitlar));
+        kesimListele();
     }
-}
-
-// ─── GİRİŞ SAYACI (İSTATİSTİK) ──────────────────────────────────────────
-function sayaclariCalistir() {
-    let bugun = new Date();
-    
-    let gunStr = bugun.toISOString().split('T')[0]; 
-    let ayStr = gunStr.substring(0, 7); 
-    
-    let d = new Date();
-    d.setHours(0,0,0,0);
-    d.setDate(d.getDate() + 4 - (d.getDay()||7));
-    let yilbasi = new Date(d.getFullYear(),0,1);
-    let haftaStr = d.getFullYear() + '-W' + Math.ceil((((d - yilbasi)/86400000)+1)/7);
-
-    if (localStorage.getItem('sayac_sonGun') !== gunStr) {
-        localStorage.setItem('sayac_gunluk', '0');
-        localStorage.setItem('sayac_sonGun', gunStr);
-    }
-    if (localStorage.getItem('sayac_sonHafta') !== haftaStr) {
-        localStorage.setItem('sayac_haftalik', '0');
-        localStorage.setItem('sayac_sonHafta', haftaStr);
-    }
-    if (localStorage.getItem('sayac_sonAy') !== ayStr) {
-        localStorage.setItem('sayac_aylik', '0');
-        localStorage.setItem('sayac_sonAy', ayStr);
-    }
-
-    let tGun = parseInt(localStorage.getItem('sayac_gunluk')) || 0;
-    let tHafta = parseInt(localStorage.getItem('sayac_haftalik')) || 0;
-    let tAy = parseInt(localStorage.getItem('sayac_aylik')) || 0;
-    let tTop = parseInt(localStorage.getItem('sayac_toplam')) || 0;
-
-    if (!sessionStorage.getItem('oturumSayildi')) {
-        tGun++; tHafta++; tAy++; tTop++;
-        localStorage.setItem('sayac_gunluk', tGun);
-        localStorage.setItem('sayac_haftalik', tHafta);
-        localStorage.setItem('sayac_aylik', tAy);
-        localStorage.setItem('sayac_toplam', tTop);
-        sessionStorage.setItem('oturumSayildi', 'true');
-    }
-
-    let elGun = document.getElementById('sayacGunluk');
-    let elHafta = document.getElementById('sayacHaftalik');
-    let elAy = document.getElementById('sayacAylik');
-    let elTop = document.getElementById('sayacToplam');
-    
-    if(elGun) elGun.innerText = tGun;
-    if(elHafta) elHafta.innerText = tHafta;
-    if(elAy) elAy.innerText = tAy;
-    if(elTop) elTop.innerText = tTop;
 }
